@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧵</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>XStitchLab</title>
+    <link rel="stylesheet" href="/styles/main.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="app-header">
+        <h1>XStitchLab</h1>
+        <div id="toolbar">
+          <button class="toolbar-btn" id="btn-undo" title="Undo (Ctrl+Z)" disabled>Undo</button>
+          <button class="toolbar-btn" id="btn-redo" title="Redo (Ctrl+Shift+Z)" disabled>Redo</button>
+          <button class="toolbar-btn" id="btn-save" title="Save (Ctrl+S)">Save</button>
+          <select id="view-mode" class="toolbar-select">
+            <option value="color">Color View</option>
+            <option value="symbol">Symbol View</option>
+            <option value="backstitch">With Backstitch</option>
+          </select>
+          <button class="toolbar-btn" id="btn-edit-backstitch" title="Edit Backstitch (click edges to add/remove)">Edit Backstitch</button>
+          <button class="toolbar-btn" id="btn-fit-canvas" title="Fit pattern to canvas (reset zoom/pan)">Fit</button>
+          <span id="stage-indicator" class="stage-indicator" style="display: none;">
+            <span id="stage-name">Pattern</span>
+            <span class="stage-hint">(J/K to navigate)</span>
+          </span>
+          <button class="toolbar-btn" id="btn-export">Export</button>
+        </div>
+      </header>
+
+      <main class="app-main">
+        <aside class="sidebar left-sidebar">
+          <!-- Upload Panel -->
+          <div id="upload-panel" class="panel">
+            <h3>New Pattern</h3>
+            <input type="file" id="image-input" accept="image/*" />
+            <label class="input-label">
+              Title: <input type="text" id="pattern-title" value="My Pattern" />
+            </label>
+            <div class="separator"></div>
+            <h3>Load Saved</h3>
+            <input type="file" id="json-input" accept=".json,application/json" />
+          </div>
+
+          <!-- Processing Settings -->
+          <details class="panel collapsible" open>
+            <summary><h3>Processing Settings</h3></summary>
+            <div class="panel-content">
+              <label class="input-label" title="Photo/Artwork: Resize first, then quantize colors. Best for photos and paintings.&#10;&#10;Pre-designed: Quantize at full resolution, then resize. Best for pixel art or images already designed for cross-stitch.">
+                Mode:
+                <select id="processing-mode">
+                  <option value="photo">Photo/Artwork</option>
+                  <option value="predesigned" selected>Pre-designed</option>
+                </select>
+              </label>
+              <label class="input-label" title="Target width in stitches. Height is calculated to maintain aspect ratio.&#10;&#10;Typical sizes: 50-80 for small projects, 100-150 for large wall pieces.">
+                Grid Size: <input type="number" id="grid-size" value="50" min="20" max="150" />
+              </label>
+              <label class="input-label" title="Number of thread colors in the final pattern.&#10;&#10;Fewer colors = simpler to stitch but less detail.&#10;More colors = more detail but more thread changes.">
+                Colors: <input type="number" id="num-colors" value="8" min="2" max="20" />
+              </label>
+              <label class="input-label" title="Algorithm used to reduce the image to N colors.&#10;&#10;K-means: Mathematical clustering, good general results.&#10;Median Cut: Faster, preserves color distribution.">
+                Quantize:
+                <select id="quantize-method">
+                  <option value="kmeans" selected>K-means</option>
+                  <option value="median_cut">Median Cut</option>
+                </select>
+              </label>
+              <label class="checkbox-label" title="Floyd-Steinberg dithering spreads quantization error to neighboring pixels.&#10;&#10;Creates smoother gradients but more complex patterns with scattered single stitches.&#10;Best for photographs with subtle gradients.">
+                <input type="checkbox" id="use-dithering" /> Dithering
+              </label>
+              <label class="input-label" title="Color space used for finding nearest DMC thread colors.&#10;&#10;CIELAB: Perceptually uniform, matches how humans see color differences.&#10;RGB: Mathematical, can produce unexpected matches.">
+                Color Space:
+                <select id="color-space">
+                  <option value="lab" selected>CIELAB (recommended)</option>
+                  <option value="rgb">RGB</option>
+                </select>
+              </label>
+            </div>
+          </details>
+
+          <!-- Resize Settings -->
+          <details class="panel collapsible">
+            <summary><h3>Resize Options</h3></summary>
+            <div class="panel-content">
+              <label class="input-label" title="Method used to downsample the image to grid size.&#10;&#10;Nearest: Pixel-perfect, preserves hard edges.&#10;Lanczos: Smooth anti-aliased scaling, good for photos.&#10;Majority Vote: Each output pixel = most common color in source block.">
+                Resize Method:
+                <select id="resize-method">
+                  <option value="nearest" selected>Nearest (pixel-perfect)</option>
+                  <option value="lanczos">Lanczos (smooth)</option>
+                  <option value="majority">Majority Vote</option>
+                </select>
+              </label>
+              <label class="input-label" title="Threshold for merging visually similar colors after quantization.&#10;&#10;Higher values merge more aggressively, reducing color count.&#10;0 = no merging, 50+ = aggressive merging.">
+                Merge Threshold:
+                <input type="number" id="merge-threshold" value="0" min="0" max="100" />
+              </label>
+            </div>
+          </details>
+
+          <!-- Fabric Settings -->
+          <details class="panel collapsible">
+            <summary><h3>Fabric</h3></summary>
+            <div class="panel-content">
+              <label class="input-label" title="Holes per inch in the Aida cloth.&#10;&#10;Higher count = smaller stitches = smaller finished size.&#10;14ct is most common for beginners.">
+                Fabric Count:
+                <select id="fabric-count">
+                  <option value="11">11 ct (large)</option>
+                  <option value="14" selected>14 ct (standard)</option>
+                  <option value="16">16 ct</option>
+                  <option value="18">18 ct (fine)</option>
+                  <option value="22">22 ct (very fine)</option>
+                </select>
+              </label>
+            </div>
+          </details>
+
+          <!-- Adjustment Settings -->
+          <details class="panel collapsible">
+            <summary><h3>Adjustments</h3></summary>
+            <div class="panel-content">
+              <label class="checkbox-label">
+                <input type="checkbox" id="fill-holes" /> Fill Internal Holes
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="snap-diagonals" /> Snap Diagonals
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="connect-lines" /> Connect Lines
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="rectangularize" /> Rectangularize
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="remove-isolated" /> Remove Isolated
+              </label>
+              <label class="input-label">
+                Min Region Size: <input type="number" id="min-region-size" value="1" min="1" max="10" />
+              </label>
+              <label class="input-label">
+                Smoothing: <input type="number" id="smoothing-iterations" value="0" min="0" max="3" />
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="straighten-edges" /> Straighten Edges
+              </label>
+            </div>
+          </details>
+
+          <!-- Regularity Settings -->
+          <details class="panel collapsible">
+            <summary><h3>Regularity</h3></summary>
+            <div class="panel-content">
+              <label class="checkbox-label" title="Detect repeated rectangular elements (windows, doors) and normalize their sizes to be consistent.">
+                <input type="checkbox" id="regularize-rectangles" /> Regularize Rectangles
+              </label>
+              <label class="input-label" title="Minimum number of similar rectangles to form a group for regularization.">
+                Min Rectangle Group:
+                <input type="number" id="min-rectangle-group-size" value="3" min="2" max="10" />
+              </label>
+              <label class="checkbox-label" title="Detect near-duplicate columns (suggesting repeated elements like windows) and make them exactly identical.">
+                <input type="checkbox" id="enforce-repetition" /> Enforce Repetition
+              </label>
+              <label class="input-label" title="Minimum similarity (0-1) to consider columns as duplicates. Higher = stricter matching.">
+                Repetition Threshold:
+                <input type="number" id="repetition-similarity-threshold" value="0.8" min="0.6" max="0.95" step="0.05" />
+              </label>
+            </div>
+          </details>
+
+          <!-- Backstitch Settings -->
+          <details class="panel collapsible">
+            <summary><h3>Backstitch</h3></summary>
+            <div class="panel-content">
+              <label class="checkbox-label">
+                <input type="checkbox" id="backstitch-enabled" /> Enable Backstitch
+              </label>
+              <label class="input-label">
+                Color:
+                <select id="backstitch-color">
+                  <option value="auto">Auto (Black)</option>
+                  <option value="#000000">Black</option>
+                  <option value="#323232">Dark Gray</option>
+                </select>
+              </label>
+              <label class="input-label">
+                Min Contrast: <input type="number" id="backstitch-contrast" value="50" min="0" max="150" />
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="backstitch-diagonals" /> Include Diagonals
+              </label>
+            </div>
+          </details>
+
+          <!-- Generate Button -->
+          <div class="panel">
+            <button id="process-btn" class="btn-primary" disabled>Generate Pattern</button>
+          </div>
+
+          <!-- Pattern Info -->
+          <div id="pattern-info" class="panel" style="display: none;">
+            <h3>Pattern Info</h3>
+            <div id="info-content"></div>
+          </div>
+
+          <!-- Pipeline Visualization -->
+          <details id="pipeline-panel" class="panel collapsible" style="display: none;">
+            <summary><h3>Pipeline Steps</h3></summary>
+            <div id="pipeline-stages" class="panel-content"></div>
+          </details>
+
+          <!-- Adjustment Stats -->
+          <div id="stats-panel" class="panel" style="display: none;">
+            <h3>Adjustments</h3>
+            <div id="stats-content"></div>
+          </div>
+        </aside>
+
+        <section class="editor-container">
+          <div id="canvas-wrapper">
+            <canvas id="pattern-canvas"></canvas>
+          </div>
+          <div id="status-bar">
+            <span id="cursor-pos">-</span>
+            <span id="status-message"></span>
+            <span id="zoom-level">100%</span>
+          </div>
+        </section>
+
+        <aside class="sidebar right-sidebar">
+          <!-- Color Palette -->
+          <div id="color-palette" class="panel">
+            <h3>Colors</h3>
+            <div id="palette-container"></div>
+          </div>
+
+          <!-- Thread List -->
+          <details id="thread-panel" class="panel collapsible" style="display: none;">
+            <summary><h3>Thread List</h3></summary>
+            <div id="thread-list" class="panel-content"></div>
+          </details>
+
+          <!-- Export Panel -->
+          <details id="export-panel" class="panel collapsible" style="display: none;">
+            <summary><h3>Export</h3></summary>
+            <div class="panel-content">
+              <button class="btn-secondary" id="export-color-png">Color PNG</button>
+              <button class="btn-secondary" id="export-symbol-png">Symbol PNG</button>
+              <button class="btn-secondary" id="export-sheet-png">Pattern Sheet</button>
+              <button class="btn-secondary" id="export-pdf">PDF Document</button>
+              <button class="btn-secondary" id="export-json">JSON Data</button>
+            </div>
+          </details>
+        </aside>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

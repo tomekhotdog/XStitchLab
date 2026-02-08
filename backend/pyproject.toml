@@ -1,0 +1,12 @@
+[project]
+name = "xstitchlab-backend"
+version = "0.1.0"
+description = "FastAPI backend for XStitchLab pattern editor"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "python-multipart>=0.0.6",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+]
