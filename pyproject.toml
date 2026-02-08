@@ -12,9 +12,7 @@ dependencies = [
     "openai>=1.0.0",
     "fpdf2>=2.7.0",
     "typer>=0.9.0",
-    "streamlit>=1.28.0",
     "rich>=13.0.0",
-    "streamlit-image-coordinates>=0.4.0",
 ]
 
 [project.scripts]

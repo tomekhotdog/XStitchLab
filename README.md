@@ -45,37 +45,6 @@ uv run xstitch generate "cute robin on holly branch" --style christmas
 uv run xstitch estimate pattern.json --fabric 14
 ```
 
-### Streamlit GUI
-
-The GUI provides a visual, step-by-step interface for creating patterns.
-
-**Start the app:**
-```bash
-uv run streamlit run app.py --server.headless=true
-```
-
-The app will open at http://localhost:8501 (or 8502 if 8501 is in use).
-
-**Run in background:**
-```bash
-nohup uv run streamlit run app.py --server.headless=true > /tmp/streamlit.log 2>&1 &
-```
-
-**Stop the app:**
-```bash
-# If running in foreground: Ctrl+C
-
-# If running in background:
-pkill -f "streamlit run app.py"
-```
-
-**GUI Workflow:**
-1. **Sidebar** - Upload an image or generate one with AI
-2. **Settings** - Adjust grid size, colors, dithering, fabric count
-3. **Generate Pattern** - Click to process the image
-4. **Tabs** - View comparison, color preview, symbol grid, thread list
-5. **Export** - Download PNG, PDF, JSON, or shopping list
-
 ## Pipeline Overview
 
 ```
@@ -92,7 +61,6 @@ pkill -f "streamlit run app.py"
 ```
 xstitchlab/
 ├── cli.py                    # CLI entry point
-├── app.py                    # Streamlit GUI
 ├── core/
 │   ├── image_input.py        # Load/validate images
 │   ├── ai_generator.py       # OpenAI DALL-E integration
@@ -125,7 +93,6 @@ An API key is **only required for AI image generation**. All other features work
 | Generate images from text | Yes |
 
 To use AI generation, either:
-- Enter the key in the GUI sidebar, or
 - Set the environment variable:
   ```bash
   export OPENAI_API_KEY=sk-your-key-here
