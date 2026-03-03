@@ -1,0 +1,7 @@
+{
+  "name": "xstitchlabs-website",
+  "private": true,
+  "scripts": {
+    "start": "npx serve ."
+  }
+}
