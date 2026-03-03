@@ -2,6 +2,6 @@
   "name": "xstitchlabs-website",
   "private": true,
   "scripts": {
-    "start": "npx serve ."
+    "start": "npx serve . -l 8080"
   }
 }
