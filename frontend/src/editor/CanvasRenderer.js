@@ -389,12 +389,14 @@ export class CanvasRenderer {
     // Check if we're close to a corner (intersection of edges)
     if (cornerDistX < edgeThreshold && cornerDistY < edgeThreshold) {
       // Near a corner - find the edge the user is most likely targeting
-      // Based on the direction from the corner to the mouse
+      // Use dot-product scoring: pick the edge whose direction best matches
+      // the cursor's offset from the corner (works fairly for h/v/diagonal)
 
       const offsetFromCornerX = relX - nearestCornerX;
       const offsetFromCornerY = relY - nearestCornerY;
 
-      // Determine primary direction
+      const offsetLen = Math.sqrt(offsetFromCornerX * offsetFromCornerX + offsetFromCornerY * offsetFromCornerY);
+
       let candidates = [];
 
       // Horizontal edges (left/right from corner)
@@ -402,14 +404,14 @@ export class CanvasRenderer {
         candidates.push({
           start: [nearestCornerX - 1, nearestCornerY],
           end: [nearestCornerX, nearestCornerY],
-          dist: Math.abs(offsetFromCornerX + 0.5) + Math.abs(offsetFromCornerY)
+          dirX: -1, dirY: 0
         });
       }
       if (nearestCornerX < width && nearestCornerY >= 0 && nearestCornerY <= height) {
         candidates.push({
           start: [nearestCornerX, nearestCornerY],
           end: [nearestCornerX + 1, nearestCornerY],
-          dist: Math.abs(offsetFromCornerX - 0.5) + Math.abs(offsetFromCornerY)
+          dirX: 1, dirY: 0
         });
       }
 
@@ -418,20 +420,60 @@ export class CanvasRenderer {
         candidates.push({
           start: [nearestCornerX, nearestCornerY - 1],
           end: [nearestCornerX, nearestCornerY],
-          dist: Math.abs(offsetFromCornerX) + Math.abs(offsetFromCornerY + 0.5)
+          dirX: 0, dirY: -1
         });
       }
       if (nearestCornerY < height && nearestCornerX >= 0 && nearestCornerX <= width) {
         candidates.push({
           start: [nearestCornerX, nearestCornerY],
           end: [nearestCornerX, nearestCornerY + 1],
-          dist: Math.abs(offsetFromCornerX) + Math.abs(offsetFromCornerY - 0.5)
+          dirX: 0, dirY: 1
         });
       }
 
-      // Return closest edge
-      if (candidates.length > 0) {
-        candidates.sort((a, b) => a.dist - b.dist);
+      // Diagonal edges (4 diagonals emanating from corner)
+      const DIAG_INV = 1 / Math.SQRT2;
+      // \ lower-right
+      if (nearestCornerX < width && nearestCornerY < height) {
+        candidates.push({
+          start: [nearestCornerX, nearestCornerY],
+          end: [nearestCornerX + 1, nearestCornerY + 1],
+          dirX: DIAG_INV, dirY: DIAG_INV
+        });
+      }
+      // \ upper-left
+      if (nearestCornerX > 0 && nearestCornerY > 0) {
+        candidates.push({
+          start: [nearestCornerX - 1, nearestCornerY - 1],
+          end: [nearestCornerX, nearestCornerY],
+          dirX: -DIAG_INV, dirY: -DIAG_INV
+        });
+      }
+      // / lower-left
+      if (nearestCornerX > 0 && nearestCornerY < height) {
+        candidates.push({
+          start: [nearestCornerX, nearestCornerY],
+          end: [nearestCornerX - 1, nearestCornerY + 1],
+          dirX: -DIAG_INV, dirY: DIAG_INV
+        });
+      }
+      // / upper-right
+      if (nearestCornerX < width && nearestCornerY > 0) {
+        candidates.push({
+          start: [nearestCornerX, nearestCornerY],
+          end: [nearestCornerX + 1, nearestCornerY - 1],
+          dirX: DIAG_INV, dirY: -DIAG_INV
+        });
+      }
+
+      // Score each candidate by dot product with cursor offset direction
+      if (candidates.length > 0 && offsetLen > 0.001) {
+        const nx = offsetFromCornerX / offsetLen;
+        const ny = offsetFromCornerY / offsetLen;
+        for (const c of candidates) {
+          c.score = c.dirX * nx + c.dirY * ny;
+        }
+        candidates.sort((a, b) => b.score - a.score);
         return { start: candidates[0].start, end: candidates[0].end };
       }
     }
@@ -463,6 +505,32 @@ export class CanvasRenderer {
           start: [edgeX, cellY2],
           end: [edgeX, cellY2 + 1]
         };
+      }
+    }
+
+    // Check if cursor is near a cell diagonal (interior detection)
+    {
+      const cx = Math.floor(relX);
+      const cy = Math.floor(relY);
+      if (cx >= 0 && cx < width && cy >= 0 && cy < height) {
+        const fx = relX - cx;
+        const fy = relY - cy;
+        const diagThreshold = 0.3;
+
+        // Distance to \ diagonal: |fx - fy| / sqrt(2)
+        const distBackslash = Math.abs(fx - fy) / Math.SQRT2;
+        // Distance to / diagonal: |fx + fy - 1| / sqrt(2)
+        const distSlash = Math.abs(fx + fy - 1) / Math.SQRT2;
+
+        if (distBackslash < diagThreshold || distSlash < diagThreshold) {
+          if (distBackslash <= distSlash) {
+            // \ diagonal: (cx, cy) -> (cx+1, cy+1)
+            return { start: [cx, cy], end: [cx + 1, cy + 1] };
+          } else {
+            // / diagonal: (cx+1, cy) -> (cx, cy+1)
+            return { start: [cx + 1, cy], end: [cx, cy + 1] };
+          }
+        }
       }
     }
 

@@ -65,13 +65,19 @@ async def export_png_direct(
         raise HTTPException(status_code=400, detail=f"Invalid pattern data: {e}")
 
     if mode == "color":
-        img = render_color_preview(pattern, cell_size=cell_size, show_grid=show_grid)
+        img = render_color_preview(
+            pattern, cell_size=cell_size, show_grid=show_grid,
+            backstitch_segments=pattern_data.backstitch_segments,
+        )
     elif mode == "symbol":
         img = render_symbol_grid(pattern, cell_size=cell_size, show_grid=show_grid)
     elif mode == "sheet":
         img = create_pattern_sheet(pattern)
     elif mode == "realistic":
-        img = render_thread_realistic(pattern, cell_size=cell_size)
+        img = render_thread_realistic(
+            pattern, cell_size=cell_size,
+            backstitch_segments=pattern_data.backstitch_segments,
+        )
     else:
         raise HTTPException(status_code=400, detail=f"Unknown mode: {mode}")
 

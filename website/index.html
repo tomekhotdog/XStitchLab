@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="XStitchLabs — Cross-stitch kits inspired by the historic cities of the Hanseatic League.">
+    <title>XStitchLabs — Cross-stitch the cities of the Hansa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sage: #9EA383;
+            --beige: #D4B896;
+            --terracotta: #C17B5F;
+            --coffee: #3E2B1E;
+            --cream: #F5F0E8;
+            --warm-white: #FAF8F4;
+            --stone: #B8AFA4;
+            --ink: #2C2420;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--warm-white);
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Subtle linen texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 3h1v1H1V3zm2-2h1v1H3V1z' fill='%23000000' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            z-index: 1000;
+        }
+
+        /* Animations */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes lineGrow {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+        }
+
+        /* Header */
+        header {
+            width: 100%;
+            max-width: 720px;
+            padding: 4rem 2rem 2rem;
+            text-align: center;
+            animation: fadeUp 0.8s ease-out;
+        }
+
+        .brand {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
+            font-size: 0.75rem;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--stone);
+            margin-bottom: 1.5rem;
+        }
+
+        .collection-name {
+            font-family: 'UnifrakturCook', cursive;
+            font-size: clamp(2.2rem, 6vw, 3.5rem);
+            color: var(--coffee);
+            line-height: 1.15;
+            margin-bottom: 0.5rem;
+        }
+
+        .tagline {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1.15rem;
+            color: var(--stone);
+            margin-top: 1rem;
+            animation: fadeUp 0.8s ease-out 0.2s both;
+        }
+
+        /* Decorative divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2.5rem auto;
+            max-width: 200px;
+            animation: fadeIn 0.8s ease-out 0.4s both;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--beige);
+            transform-origin: center;
+            animation: lineGrow 0.6s ease-out 0.6s both;
+        }
+
+        .divider-mark {
+            width: 6px;
+            height: 6px;
+            border: 1px solid var(--beige);
+            transform: rotate(45deg);
+            flex-shrink: 0;
+        }
+
+        /* Featured design */
+        .featured {
+            width: 100%;
+            max-width: 720px;
+            padding: 0 2rem;
+            animation: fadeUp 0.8s ease-out 0.5s both;
+        }
+
+        .design-card {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 2.5rem;
+            position: relative;
+        }
+
+        .design-number {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--stone);
+            margin-bottom: 1.5rem;
+        }
+
+        .design-title {
+            font-family: 'UnifrakturCook', cursive;
+            font-size: clamp(1.6rem, 4vw, 2.2rem);
+            color: var(--coffee);
+            margin-bottom: 0.3rem;
+        }
+
+        .design-location {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1.05rem;
+            color: var(--terracotta);
+            margin-bottom: 2rem;
+        }
+
+        .design-image-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .design-image {
+            width: 280px;
+            height: 280px;
+            object-fit: cover;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.04),
+                0 8px 24px rgba(0, 0, 0, 0.06);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .design-image:hover {
+            transform: scale(1.02);
+            box-shadow:
+                0 2px 6px rgba(0, 0, 0, 0.06),
+                0 12px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .design-description {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            line-height: 1.65;
+            color: var(--ink);
+            max-width: 520px;
+            margin: 0 auto 2rem;
+            text-align: center;
+        }
+
+        /* Stats row */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            padding: 1.25rem 0;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.5rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 600;
+            font-size: 1.3rem;
+            color: var(--coffee);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--stone);
+            margin-top: 0.15rem;
+            display: block;
+        }
+
+        /* Kit contents */
+        .kit-contents {
+            font-size: 0.8rem;
+            color: var(--stone);
+            text-align: center;
+            letter-spacing: 0.02em;
+            line-height: 1.6;
+        }
+
+        .kit-contents span {
+            display: inline;
+        }
+
+        .kit-contents span + span::before {
+            content: '\00a0\00b7\00a0';
+        }
+
+        /* Coming soon */
+        .coming-soon {
+            width: 100%;
+            max-width: 720px;
+            padding: 3.5rem 2rem 1rem;
+            text-align: center;
+            animation: fadeUp 0.8s ease-out 0.7s both;
+        }
+
+        .coming-soon p {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1.05rem;
+            color: var(--stone);
+        }
+
+        /* Footer */
+        footer {
+            width: 100%;
+            max-width: 720px;
+            padding: 2rem 2rem 3.5rem;
+            text-align: center;
+            animation: fadeUp 0.8s ease-out 0.9s both;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-links a {
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--stone);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--terracotta);
+        }
+
+        .copyright {
+            font-size: 0.7rem;
+            color: var(--stone);
+            opacity: 0.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            header {
+                padding: 3rem 1.5rem 1.5rem;
+            }
+
+            .featured {
+                padding: 0 1rem;
+            }
+
+            .design-card {
+                padding: 1.5rem;
+            }
+
+            .design-image {
+                width: 220px;
+                height: 220px;
+            }
+
+            .stats {
+                gap: 1.25rem;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">XStitchLabs</div>
+        <h1 class="collection-name">Hanseatic Collection</h1>
+        <p class="tagline">Cross-stitch the cities of the Hansa</p>
+    </header>
+
+    <div class="divider">
+        <div class="divider-mark"></div>
+    </div>
+
+    <main class="featured">
+        <article class="design-card">
+            <div class="design-number">No. 01</div>
+            <h2 class="design-title">The Three Brothers</h2>
+            <p class="design-location">Riga, Latvia</p>
+
+            <div class="design-image-wrapper">
+                <img
+                    class="design-image"
+                    src="three-brothers-riga.png"
+                    alt="Cross-stitch pattern of The Three Brothers, a medieval house complex in Riga"
+                    width="280"
+                    height="280"
+                >
+            </div>
+
+            <p class="design-description">
+                A unique complex of medieval houses dating from the 15th and 16th centuries &mdash; the oldest residential buildings in Riga.
+            </p>
+
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-value">1,182</span>
+                    <span class="stat-label">Stitches</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">8</span>
+                    <span class="stat-label">Colours</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">Medium</span>
+                    <span class="stat-label">Difficulty</span>
+                </div>
+            </div>
+
+            <div class="kit-contents">
+                <span>14-count Aida fabric</span>
+                <span>DMC stranded cotton</span>
+                <span>Tapestry needle</span>
+                <span>Pattern sheet</span>
+            </div>
+        </article>
+    </main>
+
+    <section class="coming-soon">
+        <p>More designs coming soon</p>
+    </section>
+
+    <div class="divider">
+        <div class="divider-mark"></div>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="https://www.instagram.com/hanseatic.tomek/" target="_blank" rel="noopener">@hanseatic.tomek</a>
+            <a href="mailto:hello@xstitchlabs.com">hello@xstitchlabs.com</a>
+        </div>
+        <p class="copyright">&copy; 2026 XStitchLabs</p>
+    </footer>
+
+</body>
+</html>

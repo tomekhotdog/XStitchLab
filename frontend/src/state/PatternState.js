@@ -74,7 +74,19 @@ export class PatternState {
           unitSegments.push({ start: [x1, y], end: [x1, y + 1] });
         }
       }
-      // Already a unit segment (or diagonal)
+      // Check if this is a diagonal segment spanning multiple units
+      else if (Math.abs(x2 - x1) === Math.abs(y2 - y1) && Math.abs(x2 - x1) > 1) {
+        const steps = Math.abs(x2 - x1);
+        const dx = Math.sign(x2 - x1);
+        const dy = Math.sign(y2 - y1);
+        for (let i = 0; i < steps; i++) {
+          unitSegments.push({
+            start: [x1 + i * dx, y1 + i * dy],
+            end: [x1 + (i + 1) * dx, y1 + (i + 1) * dy]
+          });
+        }
+      }
+      // Already a unit segment
       else {
         unitSegments.push({ start: [...seg.start], end: [...seg.end] });
       }
@@ -354,10 +366,28 @@ export class PatternState {
   mergeAdjacentSegments(segments) {
     if (segments.length === 0) return [];
 
-    // Separate horizontal and vertical segments
-    const horizontal = segments.filter(s => s.start[1] === s.end[1]);
-    const vertical = segments.filter(s => s.start[0] === s.end[0] && s.start[1] !== s.end[1]);
-    const other = segments.filter(s => s.start[0] !== s.end[0] && s.start[1] !== s.end[1]);
+    // Classify segments
+    const horizontal = [];
+    const vertical = [];
+    const backslash = []; // \ diagonals (dx === dy)
+    const slash = [];     // / diagonals (dx === -dy)
+    const other = [];
+
+    for (const s of segments) {
+      const dx = s.end[0] - s.start[0];
+      const dy = s.end[1] - s.start[1];
+      if (dy === 0) {
+        horizontal.push(s);
+      } else if (dx === 0) {
+        vertical.push(s);
+      } else if (dx === dy) {
+        backslash.push(s);
+      } else if (dx === -dy) {
+        slash.push(s);
+      } else {
+        other.push(s);
+      }
+    }
 
     const merged = [];
 
@@ -394,6 +424,48 @@ export class PatternState {
       let current = { start: [...segs[0].start], end: [...segs[0].end] };
       for (let i = 1; i < segs.length; i++) {
         if (segs[i].start[1] === current.end[1]) {
+          current.end = [...segs[i].end];
+        } else {
+          merged.push(current);
+          current = { start: [...segs[i].start], end: [...segs[i].end] };
+        }
+      }
+      merged.push(current);
+    }
+
+    // Merge \ diagonal segments by diagonal identity (start[0] - start[1])
+    const bsByDiag = {};
+    for (const s of backslash) {
+      const key = s.start[0] - s.start[1];
+      if (!bsByDiag[key]) bsByDiag[key] = [];
+      bsByDiag[key].push(s);
+    }
+    for (const key in bsByDiag) {
+      const segs = bsByDiag[key].sort((a, b) => a.start[0] - b.start[0]);
+      let current = { start: [...segs[0].start], end: [...segs[0].end] };
+      for (let i = 1; i < segs.length; i++) {
+        if (segs[i].start[0] === current.end[0] && segs[i].start[1] === current.end[1]) {
+          current.end = [...segs[i].end];
+        } else {
+          merged.push(current);
+          current = { start: [...segs[i].start], end: [...segs[i].end] };
+        }
+      }
+      merged.push(current);
+    }
+
+    // Merge / diagonal segments by diagonal identity (start[0] + start[1])
+    const slByDiag = {};
+    for (const s of slash) {
+      const key = s.start[0] + s.start[1];
+      if (!slByDiag[key]) slByDiag[key] = [];
+      slByDiag[key].push(s);
+    }
+    for (const key in slByDiag) {
+      const segs = slByDiag[key].sort((a, b) => a.start[0] - b.start[0]);
+      let current = { start: [...segs[0].start], end: [...segs[0].end] };
+      for (let i = 1; i < segs.length; i++) {
+        if (segs[i].start[0] === current.end[0] && segs[i].start[1] === current.end[1]) {
           current.end = [...segs[i].end];
         } else {
           merged.push(current);

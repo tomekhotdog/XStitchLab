@@ -2,7 +2,7 @@
  * API client for XStitchLab backend
  */
 
-const BASE_URL = 'http://localhost:8000/api';
+const BASE_URL = '/api';
 
 /**
  * Upload an image and create a pattern

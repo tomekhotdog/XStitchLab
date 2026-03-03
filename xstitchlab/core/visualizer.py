@@ -31,7 +31,8 @@ def render_color_preview(
     pattern: Pattern,
     cell_size: int = 10,
     show_grid: bool = True,
-    grid_major: int = 10
+    grid_major: int = 10,
+    backstitch_segments: Optional[list[dict]] = None,
 ) -> Image.Image:
     """Render pattern as colored blocks (how it will look when stitched).
 
@@ -40,6 +41,8 @@ def render_color_preview(
         cell_size: Size of each cell in pixels
         show_grid: Whether to show grid lines
         grid_major: Draw thicker lines every N cells
+        backstitch_segments: Optional list of backstitch line segments,
+            each a dict with 'start' and 'end' keys as [x, y] grid coords.
 
     Returns:
         PIL Image with color preview
@@ -73,6 +76,17 @@ def render_color_preview(
             y = i * cell_size
             color = major_color if i % grid_major == 0 else grid_color
             draw.line([(0, y), (width, y)], fill=color)
+
+    # Draw backstitch outlines
+    if backstitch_segments:
+        bs_width = max(1, int(cell_size * 0.15))
+        for seg in backstitch_segments:
+            sx, sy = seg["start"]
+            ex, ey = seg["end"]
+            draw.line(
+                [(sx * cell_size, sy * cell_size), (ex * cell_size, ey * cell_size)],
+                fill=(10, 10, 10), width=bs_width,
+            )
 
     return img
 
@@ -147,49 +161,154 @@ def render_symbol_grid(
 
 def render_thread_realistic(
     pattern: Pattern,
-    cell_size: int = 8,
-    thread_width: float = 0.7
+    cell_size: int = 20,
+    thread_width: float = 0.7,
+    backstitch_segments: Optional[list[dict]] = None,
 ) -> Image.Image:
-    """Render pattern with thread-like texture for realistic preview.
+    """Render pattern with realistic thread texture via 2x supersampling.
+
+    Produces an image that simulates how the finished cross-stitch looks:
+    cream Aida fabric with textured X stitches showing thread depth,
+    anti-aliased strokes, and subtle shading.
 
     Args:
         pattern: The Pattern object
-        cell_size: Size of each cell in pixels
-        thread_width: Width of "thread" relative to cell (0-1)
+        cell_size: Size of each cell in output pixels (rendered at 2x internally)
+        thread_width: Width of thread relative to cell (0-1)
+        backstitch_segments: Optional list of backstitch line segments,
+            each a dict with 'start' and 'end' keys as [x, y] grid coords.
 
     Returns:
-        PIL Image with thread-like appearance
+        PIL Image with realistic thread appearance
     """
-    width = pattern.metadata.width * cell_size
-    height = pattern.metadata.height * cell_size
+    scale = 2  # Supersample factor for anti-aliasing
+    cs = cell_size * scale  # Internal cell size
+    pw = pattern.metadata.width
+    ph = pattern.metadata.height
+    w, h = pw * cs, ph * cs
 
-    img = Image.new("RGB", (width, height), (245, 240, 235))  # Fabric color
+    # --- Fabric base with woven texture ---
+    fabric_base = (245, 240, 235)
+    fabric_arr = np.full((h, w, 3), fabric_base, dtype=np.uint8)
+
+    # Aida weave: subtle checkerboard at the thread-intersection scale
+    weave_period = max(2, cs // 6)
+    yy, xx = np.ogrid[:h, :w]
+    checker = ((yy // weave_period) + (xx // weave_period)) % 2 == 0
+    fabric_arr[checker] = np.clip(
+        fabric_arr[checker].astype(np.int16) - 6, 0, 255
+    ).astype(np.uint8)
+
+    # Tiny holes at cell corners (Aida fabric holes)
+    hole_r = max(1, cs // 12)
+    for gy in range(ph + 1):
+        for gx in range(pw + 1):
+            cy, cx = gy * cs, gx * cs
+            y0 = max(0, cy - hole_r)
+            y1 = min(h, cy + hole_r + 1)
+            x0 = max(0, cx - hole_r)
+            x1 = min(w, cx + hole_r + 1)
+            # Darken the hole area
+            patch = fabric_arr[y0:y1, x0:x1].astype(np.int16) - 20
+            fabric_arr[y0:y1, x0:x1] = np.clip(patch, 0, 255).astype(np.uint8)
+
+    img = Image.fromarray(fabric_arr)
     draw = ImageDraw.Draw(img)
 
-    offset = int(cell_size * (1 - thread_width) / 2)
-    thread_size = int(cell_size * thread_width)
+    # --- Thread parameters ---
+    margin = int(cs * (1 - thread_width) / 2)
+    tw = max(2, int(cs * thread_width * 0.35))  # Main thread stroke width
 
+    # --- Draw stitches ---
     for y, row in enumerate(pattern.grid):
         for x, color_idx in enumerate(row):
-            if 0 <= color_idx < len(pattern.legend):
-                color = pattern.legend[color_idx].dmc_color.rgb
+            if not (0 <= color_idx < len(pattern.legend)):
+                continue
 
-                x0 = x * cell_size + offset
-                y0 = y * cell_size + offset
+            r, g, b = pattern.legend[color_idx].dmc_color.rgb
+            cx0 = x * cs + margin
+            cy0 = y * cs + margin
+            cx1 = (x + 1) * cs - margin
+            cy1 = (y + 1) * cs - margin
 
-                # Draw cross shape to simulate X stitch
-                # First diagonal
-                draw.line(
-                    [(x0, y0), (x0 + thread_size, y0 + thread_size)],
-                    fill=color,
-                    width=max(1, thread_size // 3)
-                )
-                # Second diagonal
-                draw.line(
-                    [(x0 + thread_size, y0), (x0, y0 + thread_size)],
-                    fill=color,
-                    width=max(1, thread_size // 3)
-                )
+            # Shadow color (darker, semi-transparent effect via blend)
+            sr = max(0, int(r * 0.55))
+            sg = max(0, int(g * 0.55))
+            sb = max(0, int(b * 0.55))
+
+            # Highlight color (lighter)
+            hr = min(255, int(r + (255 - r) * 0.3))
+            hg = min(255, int(g + (255 - g) * 0.3))
+            hb = min(255, int(b + (255 - b) * 0.3))
+
+            shadow_offset = max(1, tw // 3)
+
+            # Bottom strand: bottom-left → top-right (drawn first, underneath)
+            # Shadow
+            draw.line(
+                [(cx0 + shadow_offset, cy1 + shadow_offset),
+                 (cx1 + shadow_offset, cy0 + shadow_offset)],
+                fill=(sr, sg, sb), width=tw
+            )
+            # Main stroke
+            draw.line(
+                [(cx0, cy1), (cx1, cy0)],
+                fill=(r, g, b), width=tw
+            )
+            # Highlight along upper edge
+            draw.line(
+                [(cx0 - shadow_offset // 2, cy1 - shadow_offset // 2),
+                 (cx1 - shadow_offset // 2, cy0 - shadow_offset // 2)],
+                fill=(hr, hg, hb), width=max(1, tw // 3)
+            )
+
+            # Top strand: top-left → bottom-right (drawn second, on top)
+            # Shadow
+            draw.line(
+                [(cx0 + shadow_offset, cy0 + shadow_offset),
+                 (cx1 + shadow_offset, cy1 + shadow_offset)],
+                fill=(sr, sg, sb), width=tw
+            )
+            # Main stroke
+            draw.line(
+                [(cx0, cy0), (cx1, cy1)],
+                fill=(r, g, b), width=tw
+            )
+            # Highlight along upper edge
+            draw.line(
+                [(cx0 - shadow_offset // 2, cy0 - shadow_offset // 2),
+                 (cx1 - shadow_offset // 2, cy1 - shadow_offset // 2)],
+                fill=(hr, hg, hb), width=max(1, tw // 3)
+            )
+
+    # --- Backstitch outlines (drawn on top of all stitches) ---
+    if backstitch_segments:
+        bs_width = max(2, int(cs * 0.12))
+        bs_shadow = max(1, bs_width // 2)
+
+        for seg in backstitch_segments:
+            sx, sy = seg["start"]
+            ex, ey = seg["end"]
+            # Coordinates are in grid-corner units → multiply by cell size
+            px0, py0 = int(sx * cs), int(sy * cs)
+            px1, py1 = int(ex * cs), int(ey * cs)
+
+            # Shadow underneath for depth
+            draw.line(
+                [(px0 + bs_shadow, py0 + bs_shadow),
+                 (px1 + bs_shadow, py1 + bs_shadow)],
+                fill=(40, 40, 40), width=bs_width,
+            )
+            # Main black backstitch line
+            draw.line(
+                [(px0, py0), (px1, py1)],
+                fill=(10, 10, 10), width=bs_width,
+            )
+
+    # --- Downsample with LANCZOS for anti-aliasing ---
+    final_w = pw * cell_size
+    final_h = ph * cell_size
+    img = img.resize((final_w, final_h), Image.Resampling.LANCZOS)
 
     return img
 

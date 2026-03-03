@@ -97,6 +97,7 @@ const exportPanel = document.getElementById('export-panel');
 const exportColorPNG = document.getElementById('export-color-png');
 const exportSymbolPNG = document.getElementById('export-symbol-png');
 const exportSheetPNG = document.getElementById('export-sheet-png');
+const exportRealisticPNG = document.getElementById('export-realistic-png');
 const exportPDFBtn = document.getElementById('export-pdf');
 const exportJSONBtn = document.getElementById('export-json');
 
@@ -261,6 +262,7 @@ function setupEventListeners() {
   exportColorPNG.addEventListener('click', () => handleExport('color'));
   exportSymbolPNG.addEventListener('click', () => handleExport('symbol'));
   exportSheetPNG.addEventListener('click', () => handleExport('sheet'));
+  exportRealisticPNG.addEventListener('click', () => handleExport('realistic'));
   exportPDFBtn.addEventListener('click', handleExportPDF);
   exportJSONBtn.addEventListener('click', handleExportJSON);
 
