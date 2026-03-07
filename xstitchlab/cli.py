@@ -450,6 +450,45 @@ def estimate(
     console.print(f"\n[bold]Total Skeins Needed: {total_skeins}[/bold]")
 
 
+@app.command("pattern-sheet")
+def pattern_sheet(
+    design: Path = typer.Argument(
+        ...,
+        help="Path to design JSON file",
+        exists=True
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output", "-o",
+        help="Output HTML file path (defaults to <design>_pattern_sheet.html)"
+    ),
+    open_browser: bool = typer.Option(
+        True,
+        "--open/--no-open",
+        help="Open the generated HTML in your browser"
+    )
+):
+    """Generate a branded A5 pattern sheet from a design JSON.
+
+    Creates an HTML file that you print to PDF via Chrome (Cmd+P, A5, no margins).
+    """
+    from .export.pattern_sheet.generate import generate_pattern_sheet
+    import webbrowser
+
+    console.print(f"\n[bold blue]XStitchLab[/bold blue] - Pattern Sheet Generator\n")
+
+    output_path = generate_pattern_sheet(
+        str(design),
+        str(output) if output else None
+    )
+
+    console.print(f"\n[green]✓[/green] Pattern sheet generated: {output_path}")
+    console.print("  Open in Chrome → Cmd+P → A5 → No margins → Background graphics → Save as PDF\n")
+
+    if open_browser:
+        webbrowser.open(f"file://{output_path.resolve()}")
+
+
 def main():
     """Entry point for CLI."""
     app()

@@ -125,17 +125,21 @@ class Pattern:
         for idx, entry in enumerate(self.legend):
             entry.stitch_count = counts.get(idx, 0)
 
-        # Find background color (lightest color by luminance)
+        # Find background color: prefer pure white, then fall back to lightest
         # Background is left unstitched, so exclude from total
         background_idx = None
-        max_brightness = -1
         for idx, entry in enumerate(self.legend):
-            r, g, b = entry.dmc_color.rgb
-            # Use perceived luminance formula
-            brightness = 0.299 * r + 0.587 * g + 0.114 * b
-            if brightness > max_brightness:
-                max_brightness = brightness
+            if entry.dmc_color.rgb == (255, 255, 255):
                 background_idx = idx
+                break
+        if background_idx is None:
+            max_brightness = -1
+            for idx, entry in enumerate(self.legend):
+                r, g, b = entry.dmc_color.rgb
+                brightness = 0.299 * r + 0.587 * g + 0.114 * b
+                if brightness > max_brightness:
+                    max_brightness = brightness
+                    background_idx = idx
 
         # Update metadata - exclude background from stitch count
         self.metadata.total_stitches = sum(

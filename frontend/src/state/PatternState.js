@@ -186,7 +186,12 @@ export class PatternState {
     if (this.backgroundColorIndex >= 0 && this.backgroundColorIndex < this.legend.length) {
       return this.backgroundColorIndex;
     }
-    // Auto-detect: find lightest color by luminance
+    // Auto-detect: prefer pure white, then fall back to lightest by luminance
+    const whiteIdx = this.legend.findIndex(e =>
+      e.rgb[0] === 255 && e.rgb[1] === 255 && e.rgb[2] === 255
+    );
+    if (whiteIdx >= 0) return whiteIdx;
+
     let maxBrightness = -1;
     let backgroundIdx = 0;
     this.legend.forEach((entry, idx) => {

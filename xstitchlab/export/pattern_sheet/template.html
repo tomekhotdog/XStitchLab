@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} — Pattern Sheet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sage: #9EA383;
+            --beige: #D4B896;
+            --terracotta: #C17B5F;
+            --coffee: #3E2B1E;
+            --cream: #F5F0E8;
+            --warm-white: #FAF8F4;
+            --stone: #B8AFA4;
+            --ink: #2C2420;
+        }
+
+        @page {
+            size: A5 portrait;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 148mm;
+            height: 210mm;
+            font-family: 'Barlow', sans-serif;
+            font-size: 7pt;
+            color: var(--ink);
+            background: white;
+            overflow: hidden;
+        }
+
+        .page {
+            width: 148mm;
+            height: 210mm;
+            padding: 6mm 7mm 5mm 7mm;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            padding-bottom: 2.5mm;
+            border-bottom: 0.3mm solid var(--beige);
+            flex-shrink: 0;
+        }
+
+        .brand {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 8pt;
+            color: var(--coffee);
+            letter-spacing: 0.15em;
+            margin-bottom: 0.5mm;
+        }
+
+        .collection {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 6pt;
+            color: var(--terracotta);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .tagline {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 6.5pt;
+            color: var(--stone);
+            margin-top: 0.5mm;
+        }
+
+        /* ── Grid Section ── */
+        .grid-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2mm 0;
+            min-height: 0;
+        }
+
+        .grid-container {
+            position: relative;
+            line-height: 0;
+        }
+
+        .grid-table {
+            border-collapse: collapse;
+            line-height: 1;
+        }
+
+        .grid-table td {
+            width: {{ cell_size }};
+            height: {{ cell_size }};
+            text-align: center;
+            vertical-align: middle;
+            font-family: 'Barlow', sans-serif;
+            font-size: {{ symbol_font_size }};
+            font-weight: 600;
+            line-height: 1;
+            padding: 0;
+        }
+
+        /* Grid lines */
+        .grid-table td {
+            border: 0.1mm solid rgba(0,0,0,0.08);
+        }
+
+        /* Major grid lines every 10 */
+        .grid-table td.col-major {
+            border-left: 0.3mm solid rgba(0,0,0,0.25);
+        }
+        .grid-table td.row-major {
+            border-top: 0.3mm solid rgba(0,0,0,0.25);
+        }
+
+        /* Row/column numbers */
+        .grid-numbers-top {
+            display: flex;
+            font-size: 4.5pt;
+            color: var(--stone);
+            font-weight: 500;
+        }
+
+        .grid-numbers-top span {
+            text-align: center;
+        }
+
+        .grid-numbers-left {
+            position: absolute;
+            left: -5.5mm;
+            top: 0;
+            font-size: 4.5pt;
+            color: var(--stone);
+            font-weight: 500;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .grid-numbers-left span {
+            text-align: right;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        /* Backstitch SVG overlay */
+        .backstitch-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        /* ── Legend ── */
+        .legend-section {
+            flex-shrink: 0;
+            padding-top: 2mm;
+            border-top: 0.3mm solid var(--beige);
+        }
+
+        .legend-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 6pt;
+        }
+
+        .legend-table th {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--stone);
+            font-size: 5pt;
+            padding: 0.5mm 1mm;
+            text-align: left;
+            border-bottom: 0.2mm solid var(--beige);
+        }
+
+        .legend-table td {
+            padding: 0.6mm 1mm;
+            vertical-align: middle;
+            border-bottom: 0.1mm solid #eee;
+        }
+
+        .legend-swatch {
+            width: 3mm;
+            height: 3mm;
+            border: 0.2mm solid rgba(0,0,0,0.15);
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .legend-symbol {
+            font-weight: 600;
+            font-size: 6.5pt;
+            width: 4mm;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .legend-dmc {
+            font-weight: 500;
+            color: var(--coffee);
+        }
+
+        .legend-name {
+            color: var(--stone);
+        }
+
+        .legend-count {
+            text-align: right;
+            color: var(--ink);
+            font-weight: 500;
+        }
+
+        .legend-bg-note {
+            color: var(--stone);
+            font-style: italic;
+            font-size: 5pt;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding-top: 1.5mm;
+            margin-top: 1mm;
+            border-top: 0.2mm solid var(--beige);
+        }
+
+        .footer-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 600;
+            font-size: 8pt;
+            color: var(--coffee);
+        }
+
+        .footer-meta {
+            font-size: 5.5pt;
+            color: var(--stone);
+        }
+
+        .footer-meta span {
+            margin-left: 2mm;
+        }
+
+        .footer-brand {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 5pt;
+            color: var(--beige);
+            letter-spacing: 0.1em;
+        }
+
+        /* Print settings */
+        @media print {
+            html, body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <div class="header">
+            <div class="brand">&times; XStitchLabs &times;</div>
+            <div class="collection">Hanseatic Collection</div>
+            <div class="tagline">Cross-stitch the cities of the Hansa</div>
+        </div>
+
+        <!-- Grid -->
+        <div class="grid-section">
+            <div class="grid-container">
+                <!-- Column numbers -->
+                {{ col_numbers }}
+
+                <div style="position: relative;">
+                    <!-- Row numbers -->
+                    {{ row_numbers }}
+
+                    <!-- The grid table -->
+                    {{ grid_html }}
+
+                    <!-- Backstitch overlay -->
+                    {{ backstitch_svg }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend-section">
+            {{ legend_html }}
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-title">{{ title }}</div>
+            <div class="footer-meta">
+                <span>{{ stitch_count }} stitches</span>
+                <span>&middot;</span>
+                <span>{{ difficulty }}</span>
+                <span>&middot;</span>
+                <span>{{ color_count }} colours</span>
+                <span>&middot;</span>
+                <span>{{ grid_width }}&times;{{ grid_height }}</span>
+            </div>
+            <div class="footer-brand">&times; XStitchLabs &times;</div>
+        </div>
+    </div>
+</body>
+</html>

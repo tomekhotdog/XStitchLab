@@ -218,16 +218,21 @@ async def get_thread_estimates(
     calc = ThreadCalculator(fabric_count=fabric_count)
     estimates = calc.estimate_all(pattern)
 
-    # Find background color (lightest by luminance) - excluded from totals
-    # since background is left unstitched in cross-stitch
+    # Find background color: prefer pure white, then fall back to lightest
+    # Background is left unstitched, so exclude from totals
     background_idx = None
-    max_brightness = -1
     for idx, e in enumerate(estimates):
-        r, g, b = e["rgb"]
-        brightness = 0.299 * r + 0.587 * g + 0.114 * b
-        if brightness > max_brightness:
-            max_brightness = brightness
+        if tuple(e["rgb"]) == (255, 255, 255):
             background_idx = idx
+            break
+    if background_idx is None:
+        max_brightness = -1
+        for idx, e in enumerate(estimates):
+            r, g, b = e["rgb"]
+            brightness = 0.299 * r + 0.587 * g + 0.114 * b
+            if brightness > max_brightness:
+                max_brightness = brightness
+                background_idx = idx
 
     # Mark background thread
     for idx, e in enumerate(estimates):
