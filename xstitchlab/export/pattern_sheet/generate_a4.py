@@ -59,6 +59,16 @@ HISTORY = {
         "as Reval — was a key Hanseatic port connecting the trade routes "
         "between Western Europe and Novgorod."
     ),
+    "gdansk": (
+        "Artus Court is a grand Gothic hall on the Long Market in Gdańsk, "
+        "Poland — built in the 14th century as a meeting place for the "
+        "city's merchants and named after the legendary King Arthur. Its "
+        "ornate Renaissance facade, with tall arched windows and a stepped "
+        "parapet, reflects the wealth of a city that was one of the "
+        "Hanseatic League's most important Baltic ports. Inside, the Great "
+        "Hall housed lavish banquets and civic gatherings beneath what was "
+        "once the tallest brick vault in medieval Europe."
+    ),
 }
 
 
@@ -68,6 +78,7 @@ DISPLAY_TITLES = {
     "bergen_bryggen": "Bryggen, Bergen",
     "lubeck_holstentor": "Holstentor, Lübeck",
     "tallinn_townhall": "Town Hall, Tallinn",
+    "gdansk_artus": "Artus Court, Gdańsk",
 }
 
 
