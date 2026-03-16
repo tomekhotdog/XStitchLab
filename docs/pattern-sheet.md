@@ -8,13 +8,13 @@ Via the `xstitch` CLI (recommended):
 
 ```bash
 # Generate and open in browser
-xstitch pattern-sheet designs/outputs/designs/3_brothers_riga_v2.json
+xstitch pattern-sheet designs/01-three-brothers-riga/design.json
 
 # Specify output path
-xstitch pattern-sheet designs/outputs/designs/3_brothers_riga_v2.json -o output/riga_sheet.html
+xstitch pattern-sheet designs/01-three-brothers-riga/design.json -o designs/01-three-brothers-riga/pattern_sheet_a4.html
 
 # Generate without opening browser
-xstitch pattern-sheet --no-open designs/outputs/designs/3_brothers_riga_v2.json
+xstitch pattern-sheet --no-open designs/01-three-brothers-riga/design.json
 ```
 
 Or directly via the module:

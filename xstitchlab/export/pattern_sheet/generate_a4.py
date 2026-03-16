@@ -73,20 +73,25 @@ HISTORY = {
 
 
 DISPLAY_TITLES = {
+    "three-brothers-riga": "Three Brothers, Riga",
     "3_brothers_riga": "Three Brothers, Riga",
     "riga_3_brothers": "Three Brothers, Riga",
+    "bryggen-bergen": "Bryggen, Bergen",
     "bergen_bryggen": "Bryggen, Bergen",
+    "holstentor-lubeck": "Holstentor, Lübeck",
     "lubeck_holstentor": "Holstentor, Lübeck",
+    "townhall-tallinn": "Town Hall, Tallinn",
     "tallinn_townhall": "Town Hall, Tallinn",
+    "artus-gdansk": "Artus Court, Gdańsk",
     "gdansk_artus": "Artus Court, Gdańsk",
 }
 
 
 def get_display_title(design_path, metadata):
     """Return a display-friendly title, falling back to metadata."""
-    stem = Path(design_path).stem.lower()
+    path_str = str(Path(design_path)).lower()
     for key, title in DISPLAY_TITLES.items():
-        if key in stem:
+        if key in path_str:
             return title
     raw = metadata.get("title", "Untitled")
     return raw.replace("_", " ").title()
@@ -252,10 +257,10 @@ def build_legend_html(d):
 
 
 def get_history(design_path):
-    """Match a history blurb by design filename."""
-    stem = Path(design_path).stem.lower()
+    """Match a history blurb by design path."""
+    path_str = str(Path(design_path)).lower()
     for key, text in HISTORY.items():
-        if key in stem:
+        if key in path_str:
             return text
     return "A design from the Hanseatic Collection by XStitchLabs."
 
@@ -341,7 +346,7 @@ STITCH_DIAGRAMS = """
                 <text x="94" y="33" text-anchor="middle" fill="#B8AFA4" font-size="3.5" font-family="Barlow">complete × right to left</text>
 
                 <!-- Summary -->
-                <text x="60" y="50" text-anchor="middle" fill="#B8AFA4" font-size="5" font-family="Barlow">Top stitch (\\) always in the same direction</text>
+                <text x="60" y="50" text-anchor="middle" fill="#B8AFA4" font-size="5" font-family="Barlow">Top stitch (/) always in the same direction</text>
             </svg>
             <div class="diagram-note">Work rows of half stitches (/) then return to complete each cross (\\)</div>
         </div>
@@ -424,7 +429,7 @@ COMMON_CSS = """
     html, body {
         width: 297mm; height: 210mm;
         font-family: 'Barlow', sans-serif;
-        font-size: 7pt; color: var(--ink);
+        font-size: 8pt; color: var(--ink);
         background: white; overflow: hidden;
     }
     .grid-table { border-collapse: collapse; line-height: 1; }
@@ -451,10 +456,10 @@ COMMON_CSS = """
         align-items: center; justify-content: flex-end;
     }
     .backstitch-overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
-    .legend-table { width: 100%; border-collapse: collapse; font-size: 6.5pt; }
+    .legend-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
     .legend-table th {
         font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
-        color: var(--stone); font-size: 5.5pt; padding: 0.5mm 1mm;
+        color: var(--stone); font-size: 6.5pt; padding: 0.5mm 1mm;
         text-align: left; border-bottom: 0.2mm solid var(--beige);
     }
     .legend-table td { padding: 0.6mm 1mm; vertical-align: middle; }
@@ -462,11 +467,11 @@ COMMON_CSS = """
         width: 3.5mm; height: 3.5mm; border: 0.2mm solid rgba(0,0,0,0.15);
         display: inline-block; vertical-align: middle;
     }
-    .legend-symbol { font-weight: 600; font-size: 7pt; width: 4mm; text-align: center; display: inline-block; }
-    .legend-dmc { font-weight: 500; color: var(--coffee); }
+    .legend-symbol { font-weight: 600; font-size: 8pt; text-align: center; white-space: nowrap; }
+    .legend-dmc { font-weight: 500; color: var(--coffee); white-space: nowrap; }
     .legend-name { color: var(--ink); }
-    .legend-count { text-align: right; color: var(--ink); font-weight: 500; }
-    .legend-bg-note { color: var(--stone); font-style: italic; font-size: 5.5pt; }
+    .legend-count { text-align: right; color: var(--ink); font-weight: 500; white-space: nowrap; }
+    .legend-bg-note { color: var(--stone); font-style: italic; font-size: 6.5pt; }
     @media print {
         html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
@@ -522,25 +527,29 @@ def generate_option_a(d, cell_mm, history, output_path, design_path=None):
         text-align: center; padding-bottom: 2.5mm;
         border-bottom: 0.3mm solid var(--beige);
     }}
-    .brand {{ font-family: 'Cinzel Decorative', serif; font-size: 10pt; color: var(--coffee); letter-spacing: 0.15em; }}
-    .collection {{ font-family: 'Cinzel Decorative', serif; font-size: 6.5pt; color: var(--terracotta); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1mm; }}
-    .tagline {{ font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 7pt; color: var(--stone); margin-top: 0.5mm; }}
+    .brand {{ font-family: 'Cinzel Decorative', serif; font-size: 11pt; color: var(--coffee); letter-spacing: 0.15em; }}
+    .collection {{ font-family: 'Cinzel Decorative', serif; font-size: 7.5pt; color: var(--terracotta); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1mm; }}
+    .tagline {{ font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 8pt; color: var(--stone); margin-top: 0.5mm; }}
     .design-title {{
         font-family: 'Cormorant Garamond', serif; font-weight: 600;
-        font-size: 12pt; color: var(--coffee); text-align: center;
-        padding: 2mm 0; border-bottom: 0.2mm solid var(--beige);
+        font-size: 13pt; color: var(--coffee); text-align: center;
+        padding: 2mm 0;
     }}
-    .history-section {{ font-size: 6.5pt; line-height: 1.55; color: var(--ink); }}
+    .story-legend-row {{
+        display: flex; gap: 4mm;
+        padding-top: 2mm; border-top: 0.3mm solid var(--beige);
+    }}
+    .history-section {{ font-size: 8.5pt; line-height: 1.6; color: var(--ink); flex: 1; text-align: justify; }}
     .history-section h3 {{
-        font-family: 'Cinzel Decorative', serif; font-size: 6pt;
+        font-family: 'Cinzel Decorative', serif; font-size: 8pt;
         color: var(--terracotta); letter-spacing: 0.08em;
         text-transform: uppercase; margin-bottom: 1.5mm;
     }}
     .legend-section {{
-        padding-top: 2mm; border-top: 0.3mm solid var(--beige);
+        flex: 1;
     }}
     .legend-section h3 {{
-        font-family: 'Cinzel Decorative', serif; font-size: 6pt;
+        font-family: 'Cinzel Decorative', serif; font-size: 8pt;
         color: var(--terracotta); letter-spacing: 0.08em;
         text-transform: uppercase; margin-bottom: 1.5mm;
     }}
@@ -548,7 +557,7 @@ def generate_option_a(d, cell_mm, history, output_path, design_path=None):
         padding-top: 2mm; border-top: 0.3mm solid var(--beige);
     }}
     .stitch-guide h3 {{
-        font-family: 'Cinzel Decorative', serif; font-size: 6pt;
+        font-family: 'Cinzel Decorative', serif; font-size: 7pt;
         color: var(--terracotta); letter-spacing: 0.08em;
         text-transform: uppercase; margin-bottom: 2mm;
     }}
@@ -564,23 +573,23 @@ def generate_option_a(d, cell_mm, history, output_path, design_path=None):
     }}
     .diagram-label {{
         font-family: 'Cormorant Garamond', serif; font-weight: 600;
-        font-size: 7pt; color: var(--coffee); margin-bottom: 1mm;
+        font-size: 8pt; color: var(--coffee); margin-bottom: 1mm;
     }}
     .diagram-svg {{
         width: 100%; height: auto;
         display: block; margin-bottom: 1mm;
     }}
     .diagram-note {{
-        font-size: 5.5pt; color: var(--stone); line-height: 1.4;
+        font-size: 6.5pt; color: var(--stone); line-height: 1.4;
     }}
     .footer-meta {{
         margin-top: auto; padding-top: 1.5mm;
         border-top: 0.2mm solid var(--beige);
-        font-size: 5.5pt; color: var(--stone); text-align: center;
+        font-size: 6.5pt; color: var(--stone); text-align: center;
     }}
     .footer-meta span {{ margin: 0 1mm; }}
     .footer-brand {{
-        font-family: 'Cinzel Decorative', serif; font-size: 5pt;
+        font-family: 'Cinzel Decorative', serif; font-size: 6pt;
         color: var(--beige); letter-spacing: 0.1em; text-align: center;
         margin-top: 1mm;
     }}
@@ -604,13 +613,15 @@ def generate_option_a(d, cell_mm, history, output_path, design_path=None):
             <div class="tagline">Cross-stitch the cities of the Hansa</div>
         </div>
         <div class="design-title">{title}</div>
-        <div class="history-section">
-            <h3>The Story</h3>
-            {history}
-        </div>
-        <div class="legend-section">
-            <h3>Colour Key</h3>
-            {legend_html}
+        <div class="story-legend-row">
+            <div class="history-section">
+                <h3>The Story</h3>
+                {history}
+            </div>
+            <div class="legend-section">
+                <h3>Colour Key</h3>
+                {legend_html}
+            </div>
         </div>
         {STITCH_DIAGRAMS}
         <div class="footer-meta">
@@ -704,7 +715,7 @@ def generate_option_b(d, cell_mm, history, output_path):
     }}
     .step-text {{ color: var(--ink); }}
     .footer-brand {{
-        font-family: 'Cinzel Decorative', serif; font-size: 5pt;
+        font-family: 'Cinzel Decorative', serif; font-size: 6pt;
         color: var(--beige); letter-spacing: 0.1em; text-align: right;
         margin-top: 1.5mm;
     }}
@@ -848,7 +859,7 @@ def generate_option_c(d, cell_mm, history, output_path):
         text-align: center;
     }}
     .footer-brand {{
-        font-family: 'Cinzel Decorative', serif; font-size: 5pt;
+        font-family: 'Cinzel Decorative', serif; font-size: 6pt;
         color: var(--beige); letter-spacing: 0.1em;
     }}
 </style></head>
@@ -936,7 +947,7 @@ def generate_a4_variants(design_path: str, output_dir: str = None):
     print(f"Generating A4 landscape for {stem}:")
     print(f"  Grid: {d['grid_w']}x{d['grid_h']}, cell: {cell_mm}mm")
 
-    output_file = out_dir / f"{stem}_a4.html"
+    output_file = out_dir / "pattern_sheet_a4.html"
     generate_option_a(d, cell_mm, history, output_file, design_path=design_path)
 
     print("Done.")

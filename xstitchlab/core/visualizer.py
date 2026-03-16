@@ -310,6 +310,15 @@ def render_thread_realistic(
     final_h = ph * cell_size
     img = img.resize((final_w, final_h), Image.Resampling.LANCZOS)
 
+    # --- Pad to square (centre pattern on fabric-coloured background) ---
+    if final_w != final_h:
+        side = max(final_w, final_h)
+        square_img = Image.new("RGB", (side, side), (245, 240, 235))
+        offset_x = (side - final_w) // 2
+        offset_y = (side - final_h) // 2
+        square_img.paste(img, (offset_x, offset_y))
+        img = square_img
+
     return img
 
 
