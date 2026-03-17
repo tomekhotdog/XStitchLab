@@ -2,6 +2,7 @@
   "name": "xstitchlabs-website",
   "private": true,
   "scripts": {
-    "start": "npx serve . -l 8080"
+    "start": "npx serve . -l 8080",
+    "build": "mkdir -p images && cp ../designs/01-*/preview_website.png images/three-brothers-riga.png && cp ../designs/02-*/preview_website.png images/holstentor-lubeck.png && cp ../designs/03-*/preview_website.png images/bryggen-bergen.png && cp ../designs/04-*/preview_website.png images/townhall-tallinn.png && cp ../designs/05-*/preview_website.png images/artuscourt-gdansk.png"
   }
 }
