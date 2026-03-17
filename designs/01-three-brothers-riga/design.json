@@ -5,7 +5,7 @@
     "width": 45,
     "height": 45,
     "color_count": 8,
-    "total_stitches": 1182,
+    "total_stitches": 1203,
     "difficulty": "medium",
     "fabric_count": 14,
     "fabric_width_inches": 5.2,
@@ -14,7 +14,7 @@
   },
   "legend": [
     {
-      "symbol": "●",
+      "symbol": "\u25cf",
       "dmc_code": "3756",
       "dmc_name": "Baby Blue Ultra Very Light",
       "rgb": [
@@ -22,10 +22,10 @@
         252,
         252
       ],
-      "stitch_count": 843
+      "stitch_count": 822
     },
     {
-      "symbol": "■",
+      "symbol": "\u25a0",
       "dmc_code": "938",
       "dmc_name": "Coffee Brown Ultra Dark",
       "rgb": [
@@ -33,10 +33,10 @@
         31,
         14
       ],
-      "stitch_count": 225
+      "stitch_count": 239
     },
     {
-      "symbol": "▲",
+      "symbol": "\u25b2",
       "dmc_code": "3023",
       "dmc_name": "Brown Gray Light",
       "rgb": [
@@ -44,10 +44,10 @@
         170,
         151
       ],
-      "stitch_count": 249
+      "stitch_count": 224
     },
     {
-      "symbol": "◆",
+      "symbol": "\u25c6",
       "dmc_code": "610",
       "dmc_name": "Drab Brown Very Dark",
       "rgb": [
@@ -55,10 +55,10 @@
         96,
         71
       ],
-      "stitch_count": 47
+      "stitch_count": 48
     },
     {
-      "symbol": "★",
+      "symbol": "\u2605",
       "dmc_code": "3046",
       "dmc_name": "Yellow Beige Medium",
       "rgb": [
@@ -66,10 +66,10 @@
         188,
         154
       ],
-      "stitch_count": 215
+      "stitch_count": 232
     },
     {
-      "symbol": "♦",
+      "symbol": "\u2666",
       "dmc_code": "522",
       "dmc_name": "Fern Green",
       "rgb": [
@@ -77,10 +77,10 @@
         158,
         126
       ],
-      "stitch_count": 230
+      "stitch_count": 220
     },
     {
-      "symbol": "♣",
+      "symbol": "\u2663",
       "dmc_code": "3865",
       "dmc_name": "Winter White",
       "rgb": [
@@ -88,10 +88,10 @@
         247,
         241
       ],
-      "stitch_count": 179
+      "stitch_count": 184
     },
     {
-      "symbol": "♠",
+      "symbol": "\u2660",
       "dmc_code": "3830",
       "dmc_name": "Terra Cotta",
       "rgb": [
@@ -99,7 +99,7 @@
         85,
         68
       ],
-      "stitch_count": 37
+      "stitch_count": 56
     }
   ],
   "grid": [
@@ -2120,7 +2120,7 @@
       0,
       0,
       0,
-      6,
+      0,
       0,
       0
     ],

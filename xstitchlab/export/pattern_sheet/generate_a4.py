@@ -319,9 +319,9 @@ STITCH_DIAGRAMS = """
 
                 <!-- Arrow to return pass -->
                 <line x1="62" y1="15" x2="68" y2="15" stroke="#B8AFA4" stroke-width="0.7"/>
-                <polygon points="68,13 71,15 68,17" fill="#B8AFA4"/>
-                <text x="66" y="11" text-anchor="middle" fill="#B8AFA4" font-size="3.5" font-family="Barlow">then</text>
-                <text x="66" y="20" text-anchor="middle" fill="#B8AFA4" font-size="3.5" font-family="Barlow">return</text>
+                <polygon points="68,13 71,15 68,17" fill="#2C2420"/>
+                <text x="66" y="11" text-anchor="middle" fill="#2C2420" font-size="3.5" font-family="Barlow">then</text>
+                <text x="66" y="20" text-anchor="middle" fill="#2C2420" font-size="3.5" font-family="Barlow">return</text>
 
                 <!-- Return pass: 3 cells with faded / and solid \\ -->
                 <rect x="75" y="6" width="18" height="18" fill="none" stroke="#D4B896" stroke-width="0.5"/>
@@ -342,11 +342,11 @@ STITCH_DIAGRAMS = """
 
                 <!-- Direction arrows -->
                 <line x1="108" y1="28" x2="80" y2="28" stroke="#B8AFA4" stroke-width="0.5"/>
-                <polygon points="80,26.5 77,28 80,29.5" fill="#B8AFA4"/>
-                <text x="94" y="33" text-anchor="middle" fill="#B8AFA4" font-size="3.5" font-family="Barlow">complete × right to left</text>
+                <polygon points="80,26.5 77,28 80,29.5" fill="#2C2420"/>
+                <text x="94" y="33" text-anchor="middle" fill="#2C2420" font-size="3.5" font-family="Barlow">complete × right to left</text>
 
                 <!-- Summary -->
-                <text x="60" y="50" text-anchor="middle" fill="#B8AFA4" font-size="5" font-family="Barlow">Top stitch (/) always in the same direction</text>
+                <text x="60" y="50" text-anchor="middle" fill="#2C2420" font-size="5" font-family="Barlow">Top stitch (/) always in the same direction</text>
             </svg>
             <div class="diagram-note">Work rows of half stitches (/) then return to complete each cross (\\)</div>
         </div>
@@ -364,18 +364,18 @@ STITCH_DIAGRAMS = """
                 <line x1="95" y1="17" x2="95" y2="23" stroke="#D4B896" stroke-width="0.5"/>
 
                 <!-- Grid edge labels -->
-                <text x="15" y="15" text-anchor="middle" fill="#B8AFA4" font-size="4" font-family="Barlow">A</text>
-                <text x="35" y="15" text-anchor="middle" fill="#B8AFA4" font-size="4" font-family="Barlow">B</text>
-                <text x="55" y="15" text-anchor="middle" fill="#B8AFA4" font-size="4" font-family="Barlow">C</text>
-                <text x="75" y="15" text-anchor="middle" fill="#B8AFA4" font-size="4" font-family="Barlow">D</text>
-                <text x="95" y="15" text-anchor="middle" fill="#B8AFA4" font-size="4" font-family="Barlow">E</text>
+                <text x="15" y="15" text-anchor="middle" fill="#2C2420" font-size="4" font-family="Barlow">A</text>
+                <text x="35" y="15" text-anchor="middle" fill="#2C2420" font-size="4" font-family="Barlow">B</text>
+                <text x="55" y="15" text-anchor="middle" fill="#2C2420" font-size="4" font-family="Barlow">C</text>
+                <text x="75" y="15" text-anchor="middle" fill="#2C2420" font-size="4" font-family="Barlow">D</text>
+                <text x="95" y="15" text-anchor="middle" fill="#2C2420" font-size="4" font-family="Barlow">E</text>
 
                 <!-- Step 1: needle comes up at B (from back to front) -->
                 <line x1="35" y1="30" x2="35" y2="21" stroke="#C17B5F" stroke-width="1.2" stroke-dasharray="1.5,1"/>
                 <polygon points="33,22 35,19 37,22" fill="#C17B5F"/>
                 <circle cx="35" cy="20" r="1.2" fill="#C17B5F"/>
                 <text x="35" y="36" text-anchor="middle" fill="#C17B5F" font-size="6" font-weight="600" font-family="Barlow">1</text>
-                <text x="35" y="42" text-anchor="middle" fill="#B8AFA4" font-size="4" font-family="Barlow">up at B</text>
+                <text x="35" y="42" text-anchor="middle" fill="#2C2420" font-size="4" font-family="Barlow">up at B</text>
 
                 <!-- Step 2: needle goes down at A (front to back — one edge back) -->
                 <line x1="35" y1="19" x2="15" y2="19" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round"/>
@@ -383,7 +383,7 @@ STITCH_DIAGRAMS = """
                 <polygon points="13,28 15,31 17,28" fill="#C17B5F"/>
                 <circle cx="15" cy="20" r="1.2" fill="#C17B5F"/>
                 <text x="15" y="36" text-anchor="middle" fill="#C17B5F" font-size="6" font-weight="600" font-family="Barlow">2</text>
-                <text x="15" y="42" text-anchor="middle" fill="#B8AFA4" font-size="4" font-family="Barlow">down at A</text>
+                <text x="15" y="42" text-anchor="middle" fill="#2C2420" font-size="4" font-family="Barlow">down at A</text>
 
                 <!-- Step 3: needle comes up at C (from back, skip one ahead) -->
                 <line x1="15" y1="30" x2="55" y2="30" stroke="#B8AFA4" stroke-width="0.6" stroke-dasharray="2,1.5"/>
@@ -391,13 +391,13 @@ STITCH_DIAGRAMS = """
                 <polygon points="53,22 55,19 57,22" fill="#C17B5F"/>
                 <circle cx="55" cy="20" r="1.2" fill="#C17B5F"/>
                 <text x="55" y="36" text-anchor="middle" fill="#C17B5F" font-size="6" font-weight="600" font-family="Barlow">3</text>
-                <text x="55" y="42" text-anchor="middle" fill="#B8AFA4" font-size="4" font-family="Barlow">up at C</text>
+                <text x="55" y="42" text-anchor="middle" fill="#2C2420" font-size="4" font-family="Barlow">up at C</text>
 
                 <!-- Step 4: needle goes down at B (back one edge) -->
                 <line x1="55" y1="19" x2="35" y2="19" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round"/>
                 <circle cx="35" cy="20" r="1.2" fill="#C17B5F"/>
                 <text x="45" y="8" text-anchor="middle" fill="#C17B5F" font-size="6" font-weight="600" font-family="Barlow">4</text>
-                <text x="45" y="12" text-anchor="middle" fill="#B8AFA4" font-size="4" font-family="Barlow">down at B</text>
+                <text x="45" y="12" text-anchor="middle" fill="#2C2420" font-size="4" font-family="Barlow">down at B</text>
 
                 <!-- Step 5: up at D, down at C (continue pattern) -->
                 <line x1="75" y1="30" x2="75" y2="21" stroke="#C17B5F" stroke-width="1.2" stroke-dasharray="1.5,1" opacity="0.5"/>
@@ -405,7 +405,7 @@ STITCH_DIAGRAMS = """
                 <text x="75" y="36" text-anchor="middle" fill="#C17B5F" font-size="5" font-family="Barlow" opacity="0.5">5…</text>
 
                 <!-- Result label -->
-                <text x="60" y="60" text-anchor="middle" fill="#B8AFA4" font-size="5" font-family="Barlow">Repeat: up ahead → down one edge back</text>
+                <text x="60" y="60" text-anchor="middle" fill="#2C2420" font-size="5" font-family="Barlow">Repeat: up ahead → down one edge back</text>
             </svg>
             <div class="diagram-note">Use 1 strand of DMC 310 — follow the black lines on the chart</div>
         </div>
@@ -580,7 +580,7 @@ def generate_option_a(d, cell_mm, history, output_path, design_path=None):
         display: block; margin-bottom: 1mm;
     }}
     .diagram-note {{
-        font-size: 6.5pt; color: var(--stone); line-height: 1.4;
+        font-size: 6.5pt; color: var(--ink); line-height: 1.4;
     }}
     .footer-meta {{
         margin-top: auto; padding-top: 1.5mm;
