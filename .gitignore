@@ -28,8 +28,5 @@ Thumbs.db
 .coverage
 htmlcov/
 
-# Website (build artifacts copied from designs/)
-website/images/
-
 # Private
 docs/upwork/
