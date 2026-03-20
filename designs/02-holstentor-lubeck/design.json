@@ -4,8 +4,8 @@
     "title": "holstentor",
     "width": 50,
     "height": 50,
-    "color_count": 8,
-    "total_stitches": 2628,
+    "color_count": 7,
+    "total_stitches": 870,
     "difficulty": "medium",
     "fabric_count": 14,
     "fabric_width_inches": 7,
@@ -22,7 +22,7 @@
         255,
         255
       ],
-      "stitch_count": 1793
+      "stitch_count": 1630
     },
     {
       "symbol": "\u25a0",
@@ -33,7 +33,7 @@
         106,
         91
       ],
-      "stitch_count": 523
+      "stitch_count": 506
     },
     {
       "symbol": "\u25b2",
@@ -44,7 +44,7 @@
         31,
         14
       ],
-      "stitch_count": 35
+      "stitch_count": 34
     },
     {
       "symbol": "\u25c6",
@@ -55,7 +55,7 @@
         86,
         86
       ],
-      "stitch_count": 117
+      "stitch_count": 122
     },
     {
       "symbol": "\u2605",
@@ -66,7 +66,7 @@
         0,
         0
       ],
-      "stitch_count": 81
+      "stitch_count": 78
     },
     {
       "symbol": "\u2666",
@@ -77,7 +77,7 @@
         186,
         161
       ],
-      "stitch_count": 32
+      "stitch_count": 28
     },
     {
       "symbol": "\u2663",
@@ -88,18 +88,7 @@
         48,
         34
       ],
-      "stitch_count": 78
-    },
-    {
-      "symbol": "\u2660",
-      "dmc_code": "519",
-      "dmc_name": "Sky Blue",
-      "rgb": [
-        126,
-        177,
-        200
-      ],
-      "stitch_count": 1
+      "stitch_count": 102
     }
   ],
   "grid": [
