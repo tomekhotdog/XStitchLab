@@ -452,8 +452,10 @@ Commit: `feat(ops): cleanup and backstitch operations`.
 
 ---
 
-### Task 5: Mechanical kit operations
+### Task 5: Mechanical kit operations ✅ DONE (ade4859 + review fixes)
 **Depends on:** Task 4
+
+> Outcome: 212 tests pass. Benchmark now counts fabric-vs-fabric as a match (finals name fabric `White`/`B5200`). Untuned probes: Tallinn 0.900 (predesigned w=50 + background_to_fabric auto + outline_to_backstitch auto), Lübeck 0.924 (predesigned w=70 + background_to_fabric auto + crop_pad 50×50 fit_content). Helpers: `_legend.py`, `_grid.keep_entries`.
 
 **Files:**
 - Create: `xstitchlab/ops/background_to_fabric.py`, `substitute_colour.py`, `merge_colours.py`, `crop_pad.py`, `outline_to_backstitch.py`
