@@ -1,6 +1,6 @@
 """No-op pattern operation, used by tests."""
 
-from pydantic import BaseModel
+from xstitchlab.ops.base import OpParams
 
 NAME = "noop"
 KIND = "pattern"
@@ -9,7 +9,7 @@ TITLE = "No-op"
 DESCRIPTION = "Returns the pattern unchanged (used by tests)."
 
 
-class Params(BaseModel):
+class Params(OpParams):
     times: int = 1
 
 

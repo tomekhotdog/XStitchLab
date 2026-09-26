@@ -11,7 +11,7 @@ from PIL import Image
 from pydantic import ValidationError
 
 from xstitchlab.core.pattern import OpCall, Pattern
-from xstitchlab.ops.base import OpError, RunResult, Step
+from xstitchlab.ops.base import KINDS, OpError, RunResult, Step
 
 _REQUIRED_ATTRS = ("NAME", "KIND", "GROUP", "TITLE", "DESCRIPTION", "Params", "apply")
 _SKIP_MODULES = {"base", "registry"}
@@ -24,6 +24,8 @@ _ops: dict[str, object] | None = None
 def register(op) -> None:
     """Register any object exposing the `Operation` attributes, keyed by `NAME`."""
     _ensure_discovered()
+    if op.KIND not in KINDS:
+        raise OpError(f"{op.NAME}: KIND must be one of {KINDS}, got {op.KIND!r}", op=op.NAME)
     _ops[op.NAME] = op
 
 

@@ -235,3 +235,28 @@ def test_run_recipe_wraps_exception_with_step_index():
         registry.run_recipe(Image.new("RGB", (10, 10)), [OpCall("fake_resize"), OpCall("fake_pixelate")])
     assert exc.value.step_index == 1
     assert exc.value.op == "fake_pixelate"
+
+
+def test_unknown_param_keys_fail_loudly():
+    with pytest.raises(OpError, match="bogus") as exc:
+        registry.validate_recipe([OpCall("noop", {"times": 1, "bogus": 2})], require_pixelate=False)
+    assert exc.value.step_index == 0 and exc.value.op == "noop"
+
+
+def test_register_rejects_bad_kind():
+    with pytest.raises(OpError, match="KIND"):
+        registry.register(fake_op("typo", "patttern", lambda p, _: p))
+
+
+def test_image_op_after_pixelate_is_rejected():
+    registry.register(fake_op("fake_resize", "image", lambda img, _: img))
+    registry.register(fake_op("fake_pixelate", "pixelate", lambda img, _: small_pattern()))
+    with pytest.raises(OpError, match="pixelate") as exc:
+        registry.validate_recipe([OpCall("fake_pixelate"), OpCall("fake_resize")])
+    assert exc.value.step_index == 1 and exc.value.op == "fake_resize"
+
+
+def test_empty_recipe_has_no_pixelate():
+    with pytest.raises(OpError, match="pixelate") as exc:
+        registry.validate_recipe([])
+    assert exc.value.step_index is None

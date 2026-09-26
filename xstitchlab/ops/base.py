@@ -4,11 +4,18 @@ from dataclasses import dataclass, field
 from typing import Literal, Protocol, runtime_checkable
 
 from PIL import Image
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from xstitchlab.core.pattern import Pattern
 
 Kind = Literal["image", "pixelate", "pattern"]
+KINDS = ("image", "pixelate", "pattern")
+
+
+class OpParams(BaseModel):
+    """Base for every op's Params: unknown keys in a recipe fail loudly."""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class OpError(Exception):
