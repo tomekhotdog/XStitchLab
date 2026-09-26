@@ -4,6 +4,7 @@ import pytest
 
 from xstitchlab.core.pattern import Segment
 from xstitchlab.ops import _segments
+from xstitchlab.ops._segments import merge_collinear
 from xstitchlab.ops.base import OpError
 
 
@@ -56,3 +57,12 @@ def test_split_to_units_splits_diagonals_and_rejects_other_slopes():
 def test_dedupe_removes_reversed_duplicates_and_keeps_first_order():
     segs = [Segment(3, 0, 0, 0), Segment(0, 0, 3, 0), Segment(0, 0, 0, 2), Segment(0, 2, 0, 0)]
     assert _segments.dedupe(segs) == [Segment(0, 0, 3, 0), Segment(0, 0, 0, 2)]
+
+
+def test_merge_collinear_leaves_diagonals_whole():
+    assert merge_collinear([Segment(0, 0, 3, 3)]) == [Segment(0, 0, 3, 3)]
+
+
+def test_merge_collinear_collapses_overlapping_runs():
+    merged = merge_collinear([Segment(0, 1, 1, 1), Segment(0, 1, 3, 1)])
+    assert merged == [Segment(0, 1, 3, 1)]

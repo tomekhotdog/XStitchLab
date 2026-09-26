@@ -58,3 +58,11 @@ def test_registered_in_outline_group_and_stats_count_segments():
     from xstitchlab.core.pattern import OpCall
     result = registry.run_pattern_ops(small_pattern(), [OpCall("generate_backstitch", {"min_contrast": 230})])
     assert result.steps[0].stats["backstitch"] == 4
+
+
+def test_append_never_stitches_a_run_twice():
+    p = small_pattern()
+    p.backstitch = [Segment(1, 1, 2, 1)]  # sub-run of the ring's top edge
+    appended = generate_backstitch.apply(p, generate_backstitch.Params(replace=False)).backstitch
+    replaced = generate_backstitch.apply(small_pattern(), generate_backstitch.Params(replace=True)).backstitch
+    assert appended == replaced

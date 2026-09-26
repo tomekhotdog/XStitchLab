@@ -40,20 +40,22 @@ def split_to_units(segments: list[Segment]) -> list[Segment]:
 def merge_collinear(segments: list[Segment]) -> list[Segment]:
     """Chains of horizontal/vertical unit edges sharing endpoints become one segment each.
 
-    Input may mix unit and longer segments (they are split first); diagonals pass
-    through unchanged. Output is de-duplicated and sorted.
+    Input may mix unit and longer axis-aligned segments (they are split first, so
+    overlapping segments collapse to a single run). Segments that are not
+    axis-aligned are de-duplicated and passed through unchanged, never split, so
+    this is safe to call on any existing backstitch. Output is sorted.
     """
-    units = dedupe(split_to_units(segments))
+    axis = [s for s in segments if s.x1 == s.x2 or s.y1 == s.y2]
+    other = [s for s in segments if not (s.x1 == s.x2 or s.y1 == s.y2)]
+    units = dedupe(split_to_units(axis))
     rows: dict[int, list[int]] = {}
     cols: dict[int, list[int]] = {}
-    out = []
+    out = dedupe(other)
     for u in units:
         if u.y1 == u.y2:
             rows.setdefault(u.y1, []).append(u.x1)
-        elif u.x1 == u.x2:
-            cols.setdefault(u.x1, []).append(u.y1)
         else:
-            out.append(u)
+            cols.setdefault(u.x1, []).append(u.y1)
     for y, xs in rows.items():
         out.extend(Segment(a, y, b, y) for a, b in _runs(xs))
     for x, ys in cols.items():

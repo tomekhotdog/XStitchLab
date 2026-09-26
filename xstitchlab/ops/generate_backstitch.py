@@ -13,7 +13,7 @@ from pydantic import Field
 from xstitchlab.core import backstitch
 from xstitchlab.core.pattern import Segment
 from xstitchlab.ops._grid import to_indices, to_palette
-from xstitchlab.ops._segments import dedupe, merge_collinear
+from xstitchlab.ops._segments import merge_collinear
 from xstitchlab.ops.base import OpParams
 
 NAME = "generate_backstitch"
@@ -23,12 +23,12 @@ TITLE = "Generate backstitch"
 DESCRIPTION = (
     "Outline every boundary between colours at least min_contrast apart (Euclidean "
     "RGB, 0-441) with merged straight segments. replace=False adds to the existing "
-    "backstitch instead, skipping duplicates."
+    "backstitch instead; overlapping runs are merged so nothing is stitched twice."
 )
 
 
 class Params(OpParams):
-    min_contrast: int = Field(50, ge=0, le=255)
+    min_contrast: int = Field(50, ge=0, le=442)  # RGB distance; 442 > sqrt(3*255^2)
     diagonals: bool = False
     replace: bool = True
 
@@ -40,8 +40,7 @@ def apply(pattern, params: Params):
         segments = [s for s in segments if s.x1 == s.x2 or s.y1 == s.y2]
     segments = merge_collinear(segments)
     if not params.replace:
-        segments = dedupe(list(pattern.backstitch) + segments)
+        segments = merge_collinear(list(pattern.backstitch) + segments)
     out = pattern.copy()
     out.backstitch = segments
-    out.count_stitches()
     return out
