@@ -254,8 +254,10 @@ Fix entrypoint: in `pyproject.toml` remove `"openai>=1.0.0"` (Task 7 deletes the
 
 ---
 
-### Task 2: Operation protocol, registry, and `run_recipe`
+### Task 2: Operation protocol, registry, and `run_recipe` ✅ DONE (6e704fc + review fixes)
 **Depends on:** Task 1
+
+> Outcome: 101 tests pass. Every op's `Params` must subclass `xstitchlab.ops.base.OpParams` (extra keys forbidden). `register()` validates `KIND`. The `noop` op has `GROUP="test"`; the backend must filter that group out of `/api/ops`.
 
 **Files:**
 - Create: `xstitchlab/ops/__init__.py`, `xstitchlab/ops/base.py`, `xstitchlab/ops/registry.py`, `xstitchlab/ops/noop.py` (a pattern op used only by tests: `NAME="noop"`)
