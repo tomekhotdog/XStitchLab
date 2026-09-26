@@ -8,7 +8,9 @@ from xstitchlab.ops.base import OpError
 
 PREDESIGNED = [
     OpCall("quantize_image", {"method": "kmeans", "n_colors": 8}),
-    OpCall("pixelate", {"width": 50, "sample": "majority", "steps": 3}),
+    # steps=1: multi_step_resize pads each intermediate up to whole blocks, so several
+    # steps shrink the content inside the frame (Riga: 90.6% match at 1 step vs 58.6% at 3).
+    OpCall("pixelate", {"width": 50, "sample": "majority", "steps": 1}),
 ]
 PHOTO = [
     OpCall("resize_image", {"width": 50, "method": "lanczos"}),

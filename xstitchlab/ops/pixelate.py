@@ -59,9 +59,8 @@ def _resize(img: Image.Image, params: Params) -> Image.Image:
         return img
     if params.sample == "nearest":
         return pixelator.resize_to_grid(img, width, height, maintain_aspect=False, resample_method="nearest")
-    if params.steps > 1:
-        return pixelator.multi_step_resize(img, width, height, num_steps=params.steps, mode="majority")
-    return pixelator.boundary_preserving_resize(img, width, height, mode="majority")
+    # multi_step_resize already collapses to a single boundary_preserving_resize when num_steps == 1.
+    return pixelator.multi_step_resize(img, width, height, num_steps=params.steps, mode="majority")
 
 
 def _merge_same_dmc(dmc_colors, indices: np.ndarray):

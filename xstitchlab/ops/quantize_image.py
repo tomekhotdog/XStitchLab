@@ -31,6 +31,8 @@ class Params(OpParams):
 def apply(img: Image.Image, params: Params) -> Image.Image:
     img = img.convert("RGB")
     if params.method == "unique":
+        if params.dither:
+            raise OpError("dither has no effect with method='unique'; set dither=false")
         _, palette = pixelator.extract_unique_colors(img)
         if len(palette) > MAX_UNIQUE:
             raise OpError(
@@ -51,7 +53,7 @@ def _kmeans(img: Image.Image, n_colors: int) -> tuple[Image.Image, np.ndarray]:
     """Fit on every pixel at full resolution; palette = cluster centres (the old backend path)."""
     arr = np.asarray(img)
     pixels = arr.reshape(-1, 3).astype(np.float32)
-    n_clusters = min(n_colors, len(np.unique(pixels, axis=0)))
+    n_clusters = min(n_colors, len(pixels))  # sklearn only requires n_clusters <= n_samples
     kmeans = MiniBatchKMeans(n_clusters=n_clusters, random_state=42, n_init=1, batch_size=1024)
     labels = kmeans.fit_predict(pixels)
     palette = np.clip(np.rint(kmeans.cluster_centers_), 0, 255).astype(np.uint8)

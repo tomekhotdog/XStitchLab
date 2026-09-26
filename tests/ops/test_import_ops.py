@@ -174,4 +174,10 @@ def test_run_recipe_end_to_end_with_predesigned_default():
     assert (result.pattern.width, result.pattern.height) == (10, 10)
     assert [s.name for s in result.steps] == ["quantize_image", "pixelate"]
     assert result.pattern.recipe == [OpCall("quantize_image", {"method": "kmeans", "n_colors": 4}),
-                                     OpCall("pixelate", {"width": 10, "sample": "majority", "steps": 3})]
+                                     OpCall("pixelate", {"width": 10, "sample": "majority", "steps": 1})]
+
+
+def test_quantize_unique_rejects_dither():
+    from xstitchlab.ops import quantize_image
+    with pytest.raises(OpError, match="dither"):
+        quantize_image.apply(four_block_image(20), quantize_image.Params(method="unique", dither=True))
