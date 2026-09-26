@@ -111,3 +111,13 @@ def test_legacy_designs_load_and_keep_totals(path):
 def test_segment_from_legacy_and_short_forms():
     assert Segment.from_dict({"start": [1, 2], "end": [3, 2]}) == Segment(1, 2, 3, 2)
     assert Segment.from_dict({"x1": 1, "y1": 2, "x2": 3, "y2": 2}) == Segment(1, 2, 3, 2)
+
+
+def test_from_dict_tolerates_null_backstitch_and_recipe():
+    d = make_pattern().to_dict()
+    d["backstitch"] = None
+    d["recipe"] = None
+    p = Pattern.from_dict(d)
+    assert p.backstitch == [] and p.recipe == []
+    legacy = {"grid": d["grid"], "legend": d["legend"], "backstitch_segments": None}
+    assert Pattern.from_dict(legacy).backstitch == []

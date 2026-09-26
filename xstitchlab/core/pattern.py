@@ -268,10 +268,10 @@ class Pattern:
             fabric_count=int(meta.get("fabric_count", 14)),
             source_image=meta.get("source_image"),
         )
-        raw_backstitch = data.get("backstitch", data.get("backstitch_segments", []))
+        raw_backstitch = data.get("backstitch") or data.get("backstitch_segments") or []
         backstitch = [Segment.from_dict(s) for s in raw_backstitch]
         background = data.get("background_index", data.get("background_color_index"))
-        recipe = [OpCall.from_dict(c) for c in data.get("recipe", [])]
+        recipe = [OpCall.from_dict(c) for c in (data.get("recipe") or [])]
 
         pattern = cls(
             grid=[list(row) for row in data["grid"]],
