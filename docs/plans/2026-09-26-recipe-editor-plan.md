@@ -369,8 +369,10 @@ class RunResult:
 
 ---
 
-### Task 3: Import operations and default recipes, `xstitch run`, and the benchmark table
+### Task 3: Import operations and default recipes, `xstitch run`, and the benchmark table ✅ DONE (878cb16 + review fixes)
 **Depends on:** Task 2
+
+> Outcome: 129 tests pass. PREDESIGNED default uses `steps: 1` (Riga scores 0.906 with it; 0.586 with 3 steps because `boundary_preserving_resize` pads intermediates up to whole blocks — a core padding bug left for a follow-up). `benchmark_design` returns `size_ok`, not `width_ok`. Task 4 must append its cleanup ops to PREDESIGNED with `steps` unchanged.
 
 **Files:**
 - Create: `xstitchlab/ops/quantize_image.py`, `xstitchlab/ops/resize_image.py`, `xstitchlab/ops/pixelate.py`, `xstitchlab/ops/defaults.py`
