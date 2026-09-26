@@ -53,9 +53,17 @@ def drop_unused_colours(pattern: Pattern) -> Pattern:
     indices = to_indices(pattern)
     counts = np.bincount(indices.ravel(), minlength=len(pattern.legend))
     keep = [i for i in range(len(pattern.legend)) if counts[i] > 0 or i == pattern.background_index]
+    return keep_entries(pattern, indices, keep)
+
+
+def keep_entries(pattern: Pattern, indices: np.ndarray, keep: list[int]) -> Pattern:
+    """`rebuild` for indices still in the OLD numbering: every value must be in `keep`."""
     remap = np.full(len(pattern.legend), -1, dtype=np.int32)
     remap[keep] = np.arange(len(keep), dtype=np.int32)
-    return rebuild(pattern, remap[indices], keep)
+    new_indices = remap[indices]
+    if (new_indices < 0).any():
+        raise OpError("grid refers to a legend entry that is being dropped")
+    return rebuild(pattern, new_indices, keep)
 
 
 def _legend_index_of(pattern: Pattern, rgb) -> int:

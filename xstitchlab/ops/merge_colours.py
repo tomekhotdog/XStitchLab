@@ -1,8 +1,7 @@
 """Fold one legend colour into another and drop it from the legend."""
 
-import numpy as np
 
-from xstitchlab.ops._grid import rebuild, to_indices
+from xstitchlab.ops._grid import keep_entries, to_indices
 from xstitchlab.ops._legend import index_of_code
 from xstitchlab.ops.base import OpError, OpParams
 
@@ -34,9 +33,7 @@ def merge(pattern, src: int, dst: int):
     indices = to_indices(pattern)
     indices[indices == src] = dst
     keep = [i for i in range(len(pattern.legend)) if i != src]
-    remap = np.full(len(pattern.legend), -1, dtype=np.int32)
-    remap[keep] = np.arange(len(keep), dtype=np.int32)
-    out = rebuild(pattern, remap[indices], keep)
+    out = keep_entries(pattern, indices, keep)
     if pattern.background_index == src:
         out.background_index = keep.index(dst)
         out.count_stitches()
