@@ -24,8 +24,10 @@ GAP = 12
 
 
 def score(candidate: Pattern, final: Pattern) -> dict:
-    """{'exact': fraction of cells whose DMC code matches, 'size_ok': bool,
+    """{'exact': fraction of cells that match, 'size_ok': bool,
     'confusion': {(cand_dmc, final_dmc): count} (only mismatches), 'diff_cells': int}.
+    A cell matches when the DMC codes are equal, or when both patterns leave it as
+    fabric (their respective background_index), whichever white the legend names.
     If sizes differ: exact=0.0, size_ok=False, confusion={}, diff_cells=None."""
     if (candidate.width, candidate.height) != (final.width, final.height):
         return {"exact": 0.0, "size_ok": False, "confusion": {}, "diff_cells": None}
@@ -33,8 +35,11 @@ def score(candidate: Pattern, final: Pattern) -> dict:
     final_codes = _codes(final)
     confusion: dict[tuple[str, str], int] = {}
     diff = 0
+    cand_bg, final_bg = candidate.background_index, final.background_index
     for cand_row, final_row in zip(candidate.grid, final.grid):
         for c, f in zip(cand_row, final_row):
+            if cand_bg is not None and c == cand_bg and f == final_bg:
+                continue
             key = (cand_codes[c], final_codes[f])
             if key[0] != key[1]:
                 diff += 1

@@ -54,3 +54,13 @@ def test_benchmark_design_riga_with_predesigned_default():
     assert result["colors_final"] == 8 and result["backstitch_final"] == 212
     assert isinstance(result["candidate"], Pattern) and isinstance(result["final"], Pattern)
     assert all(len(row) == 3 for row in result["confusion"]) and len(result["confusion"]) <= 10
+
+
+def test_score_treats_fabric_as_fabric_whatever_white_is_named():
+    from xstitchlab.core.pattern import DMCColor
+    a = small_pattern()
+    b = small_pattern()
+    b.legend[0].dmc_color = DMCColor("White", "White", (255, 255, 255))  # final names fabric differently
+    assert benchmark.score(a, b)["exact"] == 1.0
+    a.background_index = None  # candidate stitches the sky: now a real mismatch on 16 border cells
+    assert benchmark.score(a, b)["exact"] == 9 / 25
