@@ -30,3 +30,4 @@ htmlcov/
 
 # Private
 docs/upwork/
+.venv.nosync/
