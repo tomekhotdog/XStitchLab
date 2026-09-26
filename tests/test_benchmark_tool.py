@@ -1,5 +1,6 @@
 """Benchmark tool: scoring a candidate pattern against a design's committed final."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -39,7 +40,9 @@ def test_score_size_mismatch():
 
 def test_benchmark_design_without_recipe_raises(tmp_path):
     (tmp_path / "input.png").write_bytes((RIGA / "input.png").read_bytes())
-    (tmp_path / "design.json").write_bytes((RIGA / "design.json").read_bytes())
+    stripped = json.loads((RIGA / "design.json").read_text(encoding="utf-8"))
+    del stripped["recipe"]
+    (tmp_path / "design.json").write_text(json.dumps(stripped), encoding="utf-8")
     with pytest.raises(OpError, match="recipe"):
         benchmark.benchmark_design(tmp_path)
 

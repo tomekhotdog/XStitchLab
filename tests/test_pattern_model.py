@@ -79,33 +79,43 @@ def _heuristic_background_index(legend: list[dict]) -> int:
 
 
 @pytest.mark.parametrize("path", DESIGNS, ids=[p.parent.name for p in DESIGNS])
-def test_legacy_designs_load_and_keep_totals(path):
-    raw = json.loads(path.read_text())
+def test_committed_designs_are_canonical_and_lossless(path):
+    raw = json.loads(path.read_text(encoding="utf-8"))
     p = Pattern.from_dict(raw)
-    d = p.to_dict()
-    assert len(p.backstitch) == len(raw["backstitch_segments"])
-    assert p.background_index is not None
-    if "background_color_index" in raw:
-        assert p.background_index == raw["background_color_index"]
+    assert set(raw) == {"metadata", "legend", "grid", "backstitch", "background_index", "recipe"}
+    assert p.recipe and p.background_index is not None
+    assert p.to_dict() == raw  # counts, totals and title are exactly what the grid derives
 
-    # Recount the raw grid ourselves, excluding the heuristic background, so the
-    # expectation does not depend on the model under test.
+    # Recount the grid ourselves, excluding the background, so the expectation
+    # does not depend on the model under test.
     counts: dict[int, int] = {}
     for row in raw["grid"]:
         for v in row:
             counts[v] = counts.get(v, 0) + 1
-    bg = raw.get("background_color_index", _heuristic_background_index(raw["legend"]))
-    recount = sum(c for i, c in counts.items() if i != bg)
+    assert raw["metadata"]["total_stitches"] == sum(c for i, c in counts.items() if i != raw["background_index"])
 
-    committed = raw["metadata"]["total_stitches"]
-    if committed == recount:
-        assert d["metadata"]["total_stitches"] == committed
-    else:
-        # Some committed design.json files were hand-edited outside count_stitches(),
-        # so their metadata.total_stitches (and legend stitch_counts) are stale.
-        # The model derives totals from the grid, so compare against the recount.
-        assert d["metadata"]["total_stitches"] == recount
-    assert d["metadata"]["width"] == raw["metadata"]["width"]
+
+def test_legacy_design_shape_loads_and_derives_totals():
+    """Pre-recipe design files: backstitch_segments, background_color_index (or none), stale counts."""
+    legend = [
+        {"symbol": "●", "dmc_code": "3756", "dmc_name": "Baby Blue", "rgb": [238, 252, 252], "stitch_count": 999},
+        {"symbol": "■", "dmc_code": "310", "dmc_name": "Black", "rgb": [0, 0, 0], "stitch_count": 999},
+    ]
+    grid = [[0, 0, 1], [0, 1, 1], [1, 1, 1]]
+    segments = [{"start": [0, 1], "end": [2, 1]}, {"start": [1, 0], "end": [1, 3]}]
+    legacy = {
+        "id": "x", "metadata": {"title": "t", "total_stitches": 999}, "legend": legend, "grid": grid,
+        "backstitch_segments": segments, "pipeline_stages": {}, "adjustment_stats": {},
+    }
+    p = Pattern.from_dict(legacy)
+    assert len(p.backstitch) == 2
+    assert p.background_index == _heuristic_background_index(legend) == 0
+    d = p.to_dict()
+    assert d["metadata"]["total_stitches"] == 6 and d["legend"][0]["stitch_count"] == 3
+    assert "backstitch_segments" not in d and "pipeline_stages" not in d and "id" not in d
+
+    legacy["background_color_index"] = 1
+    assert Pattern.from_dict(legacy).background_index == 1
 
 
 def test_segment_from_legacy_and_short_forms():
