@@ -4,7 +4,7 @@ logs/
 # Python
 __pycache__/
 *.py[cod]
-.venv/
+.venv
 *.egg-info/
 dist/
 build/
