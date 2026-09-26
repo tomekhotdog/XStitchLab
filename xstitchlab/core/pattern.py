@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from typing import Optional
+import copy
 import json
 from pathlib import Path
 
@@ -70,12 +71,58 @@ class PatternMetadata:
             return "hard"
 
 
+@dataclass(frozen=True)
+class Segment:
+    """Backstitch segment between grid corners (x in 0..width, y in 0..height)."""
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+
+    @property
+    def is_unit(self) -> bool:
+        """True when the segment spans exactly one cell edge or diagonal."""
+        return max(abs(self.x2 - self.x1), abs(self.y2 - self.y1)) == 1
+
+    def to_dict(self) -> dict:
+        return {"start": [self.x1, self.y1], "end": [self.x2, self.y2]}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "Segment":
+        """Accept both {"start": [x, y], "end": [x, y]} and {"x1", "y1", "x2", "y2"}."""
+        if "start" in d:
+            (x1, y1), (x2, y2) = d["start"], d["end"]
+            return cls(int(x1), int(y1), int(x2), int(y2))
+        return cls(int(d["x1"]), int(d["y1"]), int(d["x2"]), int(d["y2"]))
+
+
+@dataclass
+class OpCall:
+    """One step of a recipe: an operation name and its parameters."""
+    op: str
+    params: dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        return {"op": self.op, "params": dict(self.params)}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "OpCall":
+        return cls(op=d["op"], params=dict(d.get("params", {})))
+
+
 @dataclass
 class Pattern:
-    """Complete cross-stitch pattern with grid, legend, and metadata."""
-    grid: list[list[int]]  # 2D grid of color indices
+    """Complete cross-stitch pattern: grid, legend, backstitch, background, recipe.
+
+    Stitch counts and size/total metadata are always derived from the grid;
+    values supplied in `metadata` or `legend[*].stitch_count` are overwritten.
+    """
+    grid: list[list[int]]  # 2D grid of legend indices, grid[y][x]
     legend: list[ColorLegendEntry] = field(default_factory=list)
     metadata: PatternMetadata = field(default_factory=PatternMetadata)
+    backstitch: list[Segment] = field(default_factory=list)
+    background_index: Optional[int] = None  # legend entry left as bare fabric
+    recipe: list[OpCall] = field(default_factory=list)
 
     # Standard symbols for pattern display (up to ~50 unique symbols)
     SYMBOLS: list[str] = field(default_factory=lambda: [
@@ -87,15 +134,16 @@ class Pattern:
     ])
 
     def __post_init__(self):
-        """Initialize metadata after creation."""
-        if self.grid:
-            self.metadata.height = len(self.grid)
-            self.metadata.width = len(self.grid[0]) if self.grid else 0
-            self.metadata.color_count = len(self.legend)
-            self.metadata.total_stitches = sum(
-                entry.stitch_count for entry in self.legend
-            )
-            self.metadata.difficulty = self.metadata.get_difficulty_rating()
+        """Derive stitch counts and metadata from the grid."""
+        self.count_stitches()
+
+    @property
+    def width(self) -> int:
+        return len(self.grid[0]) if self.grid else 0
+
+    @property
+    def height(self) -> int:
+        return len(self.grid)
 
     def get_symbol(self, color_index: int) -> str:
         """Get symbol for a color index."""
@@ -111,11 +159,24 @@ class Pattern:
                 return self.legend[color_idx].dmc_color
         return None
 
+    def guess_background_index(self) -> Optional[int]:
+        """Legacy heuristic: pure white, else the brightest legend entry."""
+        for idx, entry in enumerate(self.legend):
+            if tuple(entry.dmc_color.rgb) == (255, 255, 255):
+                return idx
+        best, best_brightness = None, -1.0
+        for idx, entry in enumerate(self.legend):
+            r, g, b = entry.dmc_color.rgb
+            brightness = 0.299 * r + 0.587 * g + 0.114 * b
+            if brightness > best_brightness:
+                best, best_brightness = idx, brightness
+        return best
+
     def count_stitches(self) -> dict[str, int]:
         """Count stitches per color, updating legend entries and metadata.
 
-        The background color (lightest/white) is excluded from total_stitches
-        since it's typically left unstitched in cross-stitch patterns.
+        The explicit `background_index` (if any) is left unstitched, so it is
+        excluded from `total_stitches` but still reported per legend entry.
         """
         counts: dict[int, int] = {}
         for row in self.grid:
@@ -125,28 +186,13 @@ class Pattern:
         for idx, entry in enumerate(self.legend):
             entry.stitch_count = counts.get(idx, 0)
 
-        # Find background color: prefer pure white, then fall back to lightest
-        # Background is left unstitched, so exclude from total
-        background_idx = None
-        for idx, entry in enumerate(self.legend):
-            if entry.dmc_color.rgb == (255, 255, 255):
-                background_idx = idx
-                break
-        if background_idx is None:
-            max_brightness = -1
-            for idx, entry in enumerate(self.legend):
-                r, g, b = entry.dmc_color.rgb
-                brightness = 0.299 * r + 0.587 * g + 0.114 * b
-                if brightness > max_brightness:
-                    max_brightness = brightness
-                    background_idx = idx
-
-        # Update metadata - exclude background from stitch count
+        background = self.background_index
+        self.metadata.width, self.metadata.height = self.width, self.height
+        self.metadata.color_count = len(self.legend)
         self.metadata.total_stitches = sum(
             entry.stitch_count for idx, entry in enumerate(self.legend)
-            if idx != background_idx
+            if idx != background
         )
-        self.metadata.color_count = len(self.legend)
         self.metadata.difficulty = self.metadata.get_difficulty_rating()
 
         return {
@@ -155,20 +201,25 @@ class Pattern:
             if idx < len(self.legend)
         }
 
+    def copy(self) -> "Pattern":
+        """Deep copy, so operations can transform without mutating the input."""
+        return copy.deepcopy(self)
+
     def to_dict(self) -> dict:
-        """Convert pattern to dictionary for JSON export."""
+        """Convert pattern to dictionary for JSON export (counts recomputed)."""
+        self.count_stitches()
         return {
             "metadata": {
                 "title": self.metadata.title,
-                "width": self.metadata.width,
-                "height": self.metadata.height,
+                "width": self.width,
+                "height": self.height,
                 "color_count": self.metadata.color_count,
                 "total_stitches": self.metadata.total_stitches,
                 "difficulty": self.metadata.difficulty,
                 "fabric_count": self.metadata.fabric_count,
                 "fabric_width_inches": round(self.metadata.fabric_width_inches, 1),
                 "fabric_height_inches": round(self.metadata.fabric_height_inches, 1),
-                "source_image": self.metadata.source_image
+                "source_image": self.metadata.source_image,
             },
             "legend": [
                 {
@@ -176,11 +227,14 @@ class Pattern:
                     "dmc_code": entry.dmc_color.code,
                     "dmc_name": entry.dmc_color.name,
                     "rgb": list(entry.dmc_color.rgb),
-                    "stitch_count": entry.stitch_count
+                    "stitch_count": entry.stitch_count,
                 }
                 for entry in self.legend
             ],
-            "grid": self.grid
+            "grid": [list(row) for row in self.grid],
+            "backstitch": [segment.to_dict() for segment in self.backstitch],
+            "background_index": self.background_index,
+            "recipe": [call.to_dict() for call in self.recipe],
         }
 
     def to_json(self, path: Path | str) -> None:
@@ -191,33 +245,46 @@ class Pattern:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Pattern":
-        """Create Pattern from dictionary."""
-        metadata = PatternMetadata(
-            title=data["metadata"].get("title", "Untitled"),
-            width=data["metadata"]["width"],
-            height=data["metadata"]["height"],
-            color_count=data["metadata"]["color_count"],
-            total_stitches=data["metadata"]["total_stitches"],
-            difficulty=data["metadata"]["difficulty"],
-            fabric_count=data["metadata"].get("fabric_count", 14),
-            source_image=data["metadata"].get("source_image")
-        )
+        """Create Pattern from dictionary.
 
-        # Build legend first so __post_init__ sees the correct values
-        legend = []
-        for entry_data in data["legend"]:
-            dmc_color = DMCColor(
-                code=entry_data["dmc_code"],
-                name=entry_data["dmc_name"],
-                rgb=tuple(entry_data["rgb"])
+        Lenient with legacy design files: accepts `backstitch_segments` and
+        `background_color_index`, ignores stale counts, and falls back to the
+        white/brightest heuristic when no background is recorded.
+        """
+        legend = [
+            ColorLegendEntry(
+                dmc_color=DMCColor(
+                    code=str(entry["dmc_code"]),
+                    name=entry.get("dmc_name", ""),
+                    rgb=tuple(entry["rgb"]),
+                ),
+                symbol=entry.get("symbol", "?"),
             )
-            legend.append(ColorLegendEntry(
-                dmc_color=dmc_color,
-                symbol=entry_data["symbol"],
-                stitch_count=entry_data["stitch_count"]
-            ))
+            for entry in data.get("legend", [])
+        ]
+        meta = data.get("metadata", {})
+        metadata = PatternMetadata(
+            title=meta.get("title", "Untitled Pattern"),
+            fabric_count=int(meta.get("fabric_count", 14)),
+            source_image=meta.get("source_image"),
+        )
+        raw_backstitch = data.get("backstitch", data.get("backstitch_segments", []))
+        backstitch = [Segment.from_dict(s) for s in raw_backstitch]
+        background = data.get("background_index", data.get("background_color_index"))
+        recipe = [OpCall.from_dict(c) for c in data.get("recipe", [])]
 
-        return cls(grid=data["grid"], legend=legend, metadata=metadata)
+        pattern = cls(
+            grid=[list(row) for row in data["grid"]],
+            legend=legend,
+            metadata=metadata,
+            backstitch=backstitch,
+            background_index=background,
+            recipe=recipe,
+        )
+        if pattern.background_index is None:
+            pattern.background_index = pattern.guess_background_index()
+            pattern.count_stitches()
+        return pattern
 
     @classmethod
     def from_json(cls, path: Path | str) -> "Pattern":
