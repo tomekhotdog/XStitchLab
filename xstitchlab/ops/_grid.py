@@ -41,7 +41,7 @@ def from_indices(pattern: Pattern, indices: np.ndarray, palette: np.ndarray | No
         keep = [_legend_index_of(pattern, rgb) for rgb in np.asarray(palette).reshape(-1, 3)]
     if indices.min() < 0 or indices.max() >= len(keep):
         raise OpError(f"grid index out of range for a legend of {len(keep)} entries")
-    return _rebuild(pattern, indices, keep)
+    return rebuild(pattern, indices, keep)
 
 
 def drop_unused_colours(pattern: Pattern) -> Pattern:
@@ -55,7 +55,7 @@ def drop_unused_colours(pattern: Pattern) -> Pattern:
     keep = [i for i in range(len(pattern.legend)) if counts[i] > 0 or i == pattern.background_index]
     remap = np.full(len(pattern.legend), -1, dtype=np.int32)
     remap[keep] = np.arange(len(keep), dtype=np.int32)
-    return _rebuild(pattern, remap[indices], keep)
+    return rebuild(pattern, remap[indices], keep)
 
 
 def _legend_index_of(pattern: Pattern, rgb) -> int:
@@ -66,8 +66,13 @@ def _legend_index_of(pattern: Pattern, rgb) -> int:
     raise OpError(f"palette RGB {rgb} matches no legend entry")
 
 
-def _rebuild(pattern: Pattern, indices: np.ndarray, keep: list[int]) -> Pattern:
-    """Pattern whose legend is `pattern.legend[k] for k in keep`, grid `indices`."""
+def rebuild(pattern: Pattern, indices: np.ndarray, keep: list[int]) -> Pattern:
+    """Pattern whose legend is `pattern.legend[k] for k in keep`, grid `indices`.
+
+    `indices` must already be expressed in the new (compact) numbering. The
+    background follows its entry's new position, or its RGB if the entry was
+    dropped, or becomes None.
+    """
     return Pattern(
         grid=indices.tolist(),
         legend=[copy.deepcopy(pattern.legend[k]) for k in keep],
