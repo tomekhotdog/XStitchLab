@@ -427,8 +427,10 @@ Commit: `feat(ops): import operations, default recipes, xstitch run, benchmark t
 
 ---
 
-### Task 4: Cleanup operations migrated from the adjuster, plus `merge_similar_colours` and `generate_backstitch`
+### Task 4: Cleanup operations migrated from the adjuster, plus `merge_similar_colours` and `generate_backstitch` ✅ DONE (1daf452 + review fixes)
 **Depends on:** Task 2 (parallel with Task 3)
+
+> Outcome: 177 tests pass. Riga with the full PREDESIGNED default scores 0.889 (the five cleanup ops cost ~1.7 points; Task 6 tunes per design). `_segments.merge_collinear` is safe on any backstitch (non-axis segments pass through). Cleanup ops keep zero-count legend entries; `_grid.drop_unused_colours` exists for Task 5/6 to use. Decision: one small file per op stays (mirrors one UI card; consistent with import ops) rather than a table-driven registration.
 
 **Files:**
 - Create: one module per op in `xstitchlab/ops/`: `remove_isolated.py`, `absorb_small_regions.py` (`min_region_size: int = Field(2, ge=2)`), `smooth.py` (`iterations: int = Field(1, ge=1, le=5)`), `straighten_edges.py`, `fill_holes.py`, `snap_diagonals.py`, `connect_lines.py`, `rectangularize.py`, `regularize_repeats.py` (`min_group_size: int = 3`, `enforce_repetition: bool = False`, `similarity: float = 0.8`), `merge_similar_colours.py` (`threshold: int = Field(20, ge=1, le=100)`), `generate_backstitch.py` (`min_contrast: int = 50`, `diagonals: bool = False`, `replace: bool = True` — when True the pattern's backstitch is replaced, else appended).
