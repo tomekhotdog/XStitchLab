@@ -1,27 +1,21 @@
 """CLI interface for XStitchLab."""
 
+import json as jsonlib
 import typer
 from pathlib import Path
 from typing import Optional
+from PIL import Image
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from .core.image_input import load_image, get_image_info
-from .core.pixelator import pixelate, get_color_indices
-from .core.color_mapper import ColorMapper
-from .core.pattern import Pattern, PatternMetadata, ColorLegendEntry, DMCPalette
+from .core.pattern import OpCall, Pattern, DMCPalette
 from .core.visualizer import create_pattern_sheet
 from .export.png_exporter import PNGExporter, quick_export
-
-# Standard symbols for pattern display
-SYMBOLS = [
-    "●", "■", "▲", "◆", "★", "♦", "♣", "♠", "♥", "○",
-    "□", "△", "◇", "☆", "◐", "◑", "◒", "◓", "⬟", "⬡",
-    "⊕", "⊗", "⊙", "⊚", "⊛", "⊜", "⊝", "⧫", "⬢", "⬣",
-    "▼", "◀", "▶", "▷", "◁", "⬤", "⬥", "⬦", "⬧", "⬨",
-    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J"
-]
+from .ops import registry
+from .ops.base import OpError, RunResult
+from .ops.defaults import DEFAULTS, default_recipe, with_overrides
 
 app = typer.Typer(
     name="xstitch",
@@ -31,73 +25,65 @@ app = typer.Typer(
 console = Console()
 
 
-def create_pattern_from_image(
-    image_path: Path,
-    grid_size: int,
-    n_colors: int,
-    use_dithering: bool,
-    use_lab_colors: bool,
-    title: Optional[str] = None
-) -> tuple[Pattern, "Image.Image", "Image.Image"]:
-    """Core pipeline: image → pixelate → map → pattern."""
-    from PIL import Image
+def _run(image_path: Path, recipe: list[OpCall], title: Optional[str] = None) -> tuple[RunResult, Image.Image]:
+    """Load an image, fold the recipe over it, fill in title/source. Exits on OpError."""
+    original = load_image(image_path)
+    try:
+        result = registry.run_recipe(original, recipe)
+    except OpError as e:
+        where = f" (step {e.step_index}: {e.op})" if e.step_index is not None else ""
+        console.print(f"[red]Recipe failed{where}: {e}[/red]")
+        raise typer.Exit(1)
+    pattern = result.pattern
+    if not pattern.metadata.title:
+        pattern.metadata.title = title or image_path.stem
+    pattern.metadata.source_image = str(image_path)
+    return result, original
 
-    # Load and process image
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
-        # Load image
-        task = progress.add_task("Loading image...", total=None)
-        original = load_image(image_path)
-        progress.update(task, completed=True)
 
-        # Pixelate
-        task = progress.add_task("Pixelating image...", total=None)
-        pixelated, palette = pixelate(
-            original,
-            grid_width=grid_size,
-            n_colors=n_colors,
-            use_dithering=use_dithering
-        )
-        progress.update(task, completed=True)
+def _last_image(result: RunResult) -> Optional[Image.Image]:
+    """The image produced by the last image-stage step (what `convert` shows as 'pixelated')."""
+    images = [s.result for s in result.steps if isinstance(s.result, Image.Image)]
+    return images[-1] if images else None
 
-        # Map colors to DMC
-        task = progress.add_task("Mapping to DMC colors...", total=None)
-        mapper = ColorMapper(use_lab=use_lab_colors)
-        dmc_colors = mapper.map_palette(palette)
-        progress.update(task, completed=True)
 
-        # Build pattern
-        task = progress.add_task("Building pattern...", total=None)
-        color_indices = get_color_indices(pixelated, palette)
+def _print_steps(result: RunResult) -> None:
+    table = Table(title="Recipe steps")
+    table.add_column("#", justify="right", style="dim")
+    table.add_column("op", style="cyan")
+    table.add_column("params")
+    table.add_column("stats")
+    for i, step in enumerate(result.steps):
+        params = ", ".join(f"{k}={v}" for k, v in step.params.items()) or "-"
+        stats = ", ".join(f"{k}={v}" for k, v in step.stats.items())
+        table.add_row(str(i), step.name, params, stats)
+    console.print(table)
 
-        # Create legend entries with symbols
-        legend = []
-        for i, dmc in enumerate(dmc_colors):
-            symbol = SYMBOLS[i] if i < len(SYMBOLS) else str(i)
-            legend.append(ColorLegendEntry(
-                dmc_color=dmc,
-                symbol=symbol,
-                stitch_count=0
-            ))
 
-        # Create pattern
-        metadata = PatternMetadata(
-            title=title or image_path.stem,
-            source_image=str(image_path)
-        )
-        pattern = Pattern(
-            grid=color_indices.tolist(),
-            legend=legend,
-            metadata=metadata
-        )
-        pattern.background_index = pattern.guess_background_index()
-        pattern.count_stitches()
-        progress.update(task, completed=True)
+def _load_recipe_file(path: Path) -> list[OpCall]:
+    """A JSON list of {op, params}, or a design.json whose `recipe` key holds one."""
+    data = jsonlib.loads(path.read_text())
+    if isinstance(data, dict):
+        data = data.get("recipe") or []
+    if not isinstance(data, list) or not data:
+        raise typer.BadParameter(f"{path}: no recipe found")
+    return [OpCall.from_dict(c) for c in data]
 
-    return pattern, original, pixelated
+
+def _resolve_recipe(source: Path, recipe: Optional[str]) -> list[OpCall]:
+    if recipe is not None:
+        if recipe in DEFAULTS:
+            return default_recipe(recipe)
+        recipe_path = Path(recipe)
+        if not recipe_path.is_file():
+            raise typer.BadParameter(f"--recipe must be one of {sorted(DEFAULTS)} or a JSON file, got {recipe!r}")
+        return _load_recipe_file(recipe_path)
+    design_json = source / "design.json" if source.is_dir() else None
+    if design_json and design_json.is_file():
+        stored = Pattern.from_json(design_json).recipe
+        if stored:
+            return stored
+    return default_recipe("predesigned")
 
 
 @app.command()
@@ -148,7 +134,7 @@ def convert(
         help="Also export pattern data as JSON"
     )
 ):
-    """Convert an image to a cross-stitch pattern."""
+    """Convert an image to a cross-stitch pattern (the `photo` recipe)."""
     console.print(f"\n[bold blue]XStitchLab[/bold blue] - Converting {image.name}\n")
 
     # Show input info
@@ -156,15 +142,17 @@ def convert(
     console.print(f"  Input: {info['width']}×{info['height']} pixels, {info['format']}")
     console.print(f"  Target: {size}×{int(size * info['height'] / info['width'])} stitches, {colors} colors\n")
 
-    # Create pattern
-    pattern, original, pixelated = create_pattern_from_image(
-        image,
-        grid_size=size,
-        n_colors=colors,
-        use_dithering=dither,
-        use_lab_colors=lab,
-        title=title
-    )
+    recipe = default_recipe("photo", width=size, n_colors=colors)
+    for call in recipe:
+        if call.op == "quantize_image":
+            call.params["dither"] = dither
+        if call.op == "pixelate":
+            call.params["color_space"] = "lab" if lab else "rgb"
+
+    with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console) as progress:
+        progress.add_task("Running recipe...", total=None)
+        result, original = _run(image, recipe, title)
+    pattern, pixelated = result.pattern, _last_image(result)
 
     # Set up output
     output_dir = output or Path.cwd()
@@ -355,14 +343,8 @@ def generate(
     console.print(f"[green]✓[/green] Image generated: {image_path}\n")
 
     # Now convert to pattern
-    pattern, original, pixelated = create_pattern_from_image(
-        image_path,
-        grid_size=size,
-        n_colors=colors,
-        use_dithering=False,
-        use_lab_colors=True,
-        title=prompt[:30]
-    )
+    result, original = _run(Path(image_path), default_recipe("photo", width=size, n_colors=colors), title=prompt[:30])
+    pattern, pixelated = result.pattern, _last_image(result)
 
     output_dir = output or Path.cwd()
     exporter = PNGExporter(output_dir)
@@ -372,6 +354,56 @@ def generate(
 
     for name, path in exports.items():
         console.print(f"  • {name}: {path}")
+
+
+@app.command()
+def run(
+    path: Path = typer.Argument(..., help="Design directory (uses input.png inside) or an image file", exists=True),
+    recipe: Optional[str] = typer.Option(
+        None, "--recipe", "-r",
+        help=f"Default recipe name ({', '.join(DEFAULTS)}) or a JSON file (a list of steps, or a design.json with a recipe). "
+             "Default: the design's own recipe, else 'predesigned'.",
+    ),
+    out: Optional[Path] = typer.Option(None, "--out", "-o", help="Output JSON (default: <dir>/run.json or <stem>_pattern.json)"),
+    width: Optional[int] = typer.Option(None, "--width", "-w", help="Override `width` on every op that has it"),
+    colors: Optional[int] = typer.Option(None, "--colors", "-c", help="Override `n_colors` on every op that has it"),
+):
+    """Run a recipe over an image and write the resulting pattern JSON."""
+    if path.is_dir():
+        image_path = path / "input.png"
+        if not image_path.is_file():
+            console.print(f"[red]{path} has no input.png[/red]")
+            raise typer.Exit(1)
+        out = out or path / "run.json"
+        title = path.name
+    else:
+        image_path = path
+        out = out or path.with_name(f"{path.stem}_pattern.json")
+        title = path.stem
+
+    steps = with_overrides(_resolve_recipe(path, recipe), width=width, n_colors=colors)
+    result, _ = _run(image_path, steps, title)
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(jsonlib.dumps(result.pattern.to_dict(), indent=2))
+    _print_steps(result)
+    console.print(f"[green]✓[/green] Wrote {out}")
+
+
+@app.command()
+def benchmark(
+    dirs: Optional[list[Path]] = typer.Argument(None, help="Design directories (default: designs/0*)"),
+    out_dir: Path = typer.Option(Path("tools/benchmark_out"), "--out-dir", help="Where side-by-side PNGs go"),
+    render: bool = typer.Option(True, "--render/--no-render", help="Write side-by-side PNGs"),
+):
+    """Score each design's recipe against its committed final pattern."""
+    from tools.benchmark import main as benchmark_main
+
+    design_dirs = list(dirs or []) or sorted(p for p in Path("designs").glob("0*") if p.is_dir())
+    if not design_dirs:
+        console.print("[red]No design directories found[/red]")
+        raise typer.Exit(1)
+    benchmark_main(design_dirs, out_dir=out_dir, render=render)
 
 
 @app.command()

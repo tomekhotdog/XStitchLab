@@ -7,6 +7,16 @@ import json
 from pathlib import Path
 
 
+# Standard symbols for pattern display (up to ~50 unique symbols)
+SYMBOLS: list[str] = [
+    "●", "■", "▲", "◆", "★", "♦", "♣", "♠", "♥", "○",
+    "□", "△", "◇", "☆", "◐", "◑", "◒", "◓", "⬟", "⬡",
+    "⊕", "⊗", "⊙", "⊚", "⊛", "⊜", "⊝", "⧫", "⬢", "⬣",
+    "▼", "◀", "▶", "▷", "◁", "⬤", "⬥", "⬦", "⬧", "⬨",
+    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J"
+]
+
+
 @dataclass(frozen=True)
 class DMCColor:
     """Represents a DMC thread color."""
@@ -124,14 +134,8 @@ class Pattern:
     background_index: Optional[int] = None  # legend entry left as bare fabric
     recipe: list[OpCall] = field(default_factory=list)
 
-    # Standard symbols for pattern display (up to ~50 unique symbols)
-    SYMBOLS: list[str] = field(default_factory=lambda: [
-        "●", "■", "▲", "◆", "★", "♦", "♣", "♠", "♥", "○",
-        "□", "△", "◇", "☆", "◐", "◑", "◒", "◓", "⬟", "⬡",
-        "⊕", "⊗", "⊙", "⊚", "⊛", "⊜", "⊝", "⧫", "⬢", "⬣",
-        "▼", "◀", "▶", "▷", "◁", "⬤", "⬥", "⬦", "⬧", "⬨",
-        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J"
-    ])
+    # Standard symbols for pattern display (see module-level SYMBOLS)
+    SYMBOLS: list[str] = field(default_factory=lambda: list(SYMBOLS))
 
     def __post_init__(self):
         """Derive stitch counts and metadata from the grid."""

@@ -7,6 +7,10 @@ from pathlib import Path
 import tempfile
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: takes a few seconds (real design + k-means); still runs by default")
+
+
 @pytest.fixture
 def temp_dir():
     """Provide a temporary directory that's cleaned up after the test."""
