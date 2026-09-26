@@ -23,8 +23,10 @@
 
 ---
 
-### Task 1: Pattern model owns backstitch, background, and recipe; fix the CLI entrypoint
+### Task 1: Pattern model owns backstitch, background, and recipe; fix the CLI entrypoint ✅ DONE (72d859a, 14e3272, +cli fix)
 **Depends on:** none
+
+> Outcome: 75 tests pass. The `xstitch` console script failure is environmental (a file-sync tool re-hides `.venv` `.pth` files); the package install is correct. Ops in later tasks must build new `Pattern` objects (or call `count_stitches()`) after mutating grids, because `metadata` counts are cached until then.
 
 **Files:**
 - Modify: `xstitchlab/core/pattern.py`
