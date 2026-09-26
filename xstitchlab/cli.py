@@ -93,6 +93,7 @@ def create_pattern_from_image(
             legend=legend,
             metadata=metadata
         )
+        pattern.background_index = pattern.guess_background_index()
         pattern.count_stitches()
         progress.update(task, completed=True)
 
