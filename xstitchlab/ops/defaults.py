@@ -11,6 +11,11 @@ PREDESIGNED = [
     # steps=1: multi_step_resize pads each intermediate up to whole blocks, so several
     # steps shrink the content inside the frame (Riga: 90.6% match at 1 step vs 58.6% at 3).
     OpCall("pixelate", {"width": 50, "sample": "majority", "steps": 1}),
+    OpCall("remove_isolated", {}),
+    OpCall("fill_holes", {}),
+    OpCall("snap_diagonals", {}),
+    OpCall("connect_lines", {}),
+    OpCall("rectangularize", {}),
 ]
 PHOTO = [
     OpCall("resize_image", {"width": 50, "method": "lanczos"}),

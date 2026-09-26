@@ -172,9 +172,11 @@ def test_default_recipe_unknown_name_raises():
 def test_run_recipe_end_to_end_with_predesigned_default():
     result = registry.run_recipe(four_block_image(100), defaults.default_recipe("predesigned", width=10, n_colors=4))
     assert (result.pattern.width, result.pattern.height) == (10, 10)
-    assert [s.name for s in result.steps] == ["quantize_image", "pixelate"]
+    cleanup = ["remove_isolated", "fill_holes", "snap_diagonals", "connect_lines", "rectangularize"]
+    assert [s.name for s in result.steps] == ["quantize_image", "pixelate", *cleanup]
     assert result.pattern.recipe == [OpCall("quantize_image", {"method": "kmeans", "n_colors": 4}),
-                                     OpCall("pixelate", {"width": 10, "sample": "majority", "steps": 1})]
+                                     OpCall("pixelate", {"width": 10, "sample": "majority", "steps": 1}),
+                                     *(OpCall(name, {}) for name in cleanup)]
 
 
 def test_quantize_unique_rejects_dither():
