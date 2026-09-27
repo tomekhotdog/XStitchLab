@@ -3,7 +3,6 @@
 from pathlib import Path
 from PIL import Image
 import numpy as np
-from typing import Optional
 
 
 SUPPORTED_FORMATS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}
@@ -78,67 +77,3 @@ def get_image_info(path: Path | str) -> dict:
             "height": img.height,
             "aspect_ratio": round(img.width / img.height, 2) if img.height > 0 else 0,
         }
-
-
-def resize_for_preview(
-    img: Image.Image,
-    max_size: int = 800
-) -> Image.Image:
-    """Resize image for preview, maintaining aspect ratio."""
-    if max(img.width, img.height) <= max_size:
-        return img.copy()
-
-    if img.width > img.height:
-        new_width = max_size
-        new_height = int(img.height * (max_size / img.width))
-    else:
-        new_height = max_size
-        new_width = int(img.width * (max_size / img.height))
-
-    return img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-
-
-def preprocess_image(
-    img: Image.Image,
-    enhance_edges: bool = False,
-    remove_background: bool = False
-) -> Image.Image:
-    """Apply optional preprocessing to improve pattern quality."""
-    result = img.copy()
-
-    if enhance_edges:
-        from PIL import ImageFilter
-        # Apply subtle edge enhancement
-        result = result.filter(ImageFilter.EDGE_ENHANCE)
-
-    if remove_background:
-        # Simple background removal: assume corners represent background
-        # This is a basic implementation - for better results, use rembg library
-        arr = np.array(result)
-        # Get corner colors (average of 5x5 corners)
-        corners = [
-            arr[:5, :5].mean(axis=(0, 1)),
-            arr[:5, -5:].mean(axis=(0, 1)),
-            arr[-5:, :5].mean(axis=(0, 1)),
-            arr[-5:, -5:].mean(axis=(0, 1)),
-        ]
-        # Use most common corner color as background
-        bg_color = np.mean(corners, axis=0).astype(np.uint8)
-
-        # Replace similar colors with white (threshold of 30)
-        diff = np.abs(arr.astype(np.float32) - bg_color.astype(np.float32))
-        mask = diff.sum(axis=2) < 90  # threshold
-        arr[mask] = [255, 255, 255]
-        result = Image.fromarray(arr)
-
-    return result
-
-
-def create_thumbnail(
-    img: Image.Image,
-    size: tuple[int, int] = (150, 150)
-) -> Image.Image:
-    """Create a square thumbnail of the image."""
-    thumb = img.copy()
-    thumb.thumbnail(size, Image.Resampling.LANCZOS)
-    return thumb

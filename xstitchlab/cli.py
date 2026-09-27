@@ -11,8 +11,8 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from .core.image_input import load_image, get_image_info
 from .core.pattern import OpCall, Pattern, DMCPalette
-from .core.visualizer import create_pattern_sheet
-from .export.png_exporter import PNGExporter, quick_export
+from .export.png_exporter import PNGExporter
+from .library import DesignFolder, LibraryError
 from .ops import registry
 from .ops.base import OpError, RunResult
 from .ops.defaults import DEFAULTS, default_recipe, with_overrides
@@ -23,6 +23,8 @@ app = typer.Typer(
     add_completion=False
 )
 console = Console()
+
+EXPORT_KINDS = ("sheet", "pdf", "png-color", "png-symbol", "png-realistic", "json")
 
 
 def _run(image_path: Path, recipe: list[OpCall], title: Optional[str] = None) -> tuple[RunResult, Image.Image]:
@@ -84,6 +86,23 @@ def _resolve_recipe(source: Path, recipe: Optional[str]) -> list[OpCall]:
         if stored:
             return stored
     return default_recipe("predesigned")
+
+
+def _design_folder(design_dir: Path) -> DesignFolder:
+    if not design_dir.is_dir():
+        console.print(f"[red]{design_dir} is not a design directory[/red]")
+        raise typer.Exit(1)
+    design_dir = design_dir.resolve()
+    return DesignFolder(design_dir.parent, design_dir.name)
+
+
+def _load_pattern(path: Path) -> Pattern:
+    """A design directory (its design.json) or a pattern JSON file."""
+    try:
+        return _design_folder(path).read_pattern() if path.is_dir() else Pattern.from_json(path)
+    except LibraryError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1)
 
 
 @app.command()
@@ -195,13 +214,8 @@ def convert(
 
     # Export PDF if requested
     if pdf:
-        try:
-            from .export.pdf_exporter import PDFExporter
-            pdf_exporter = PDFExporter(output_dir)
-            pdf_path = pdf_exporter.export_pattern(pattern, base_name)
-            exports["pdf"] = pdf_path
-        except ImportError:
-            console.print("[yellow]Warning: PDF export not available[/yellow]")
+        from .export.pdf_exporter import PDFExporter
+        exports["pdf"] = PDFExporter(output_dir).export_pattern(pattern, base_name)
 
     # Show exported files
     console.print("\n[bold]Exported Files:[/bold]")
@@ -260,8 +274,7 @@ def prompt(
 ):
     """Preview how your prompt will be enhanced for cross-stitch generation.
 
-    This shows the full prompt that would be sent to DALL-E, without
-    actually generating an image (no API key required).
+    This shows the full prompt to paste into an external image generator.
     """
     from .prompts.templates import get_template, list_styles as get_styles, get_style_description
 
@@ -282,78 +295,8 @@ def prompt(
 
     console.print(f"[dim]Style:[/dim] [cyan]{style}[/cyan]\n")
 
-    console.print("[dim]Enhanced prompt (sent to DALL-E):[/dim]")
+    console.print("[dim]Enhanced prompt:[/dim]")
     console.print(f"  [green]{enhanced}[/green]\n")
-
-    console.print("[dim]Tip: Use this enhanced prompt with --style in the generate command[/dim]")
-
-
-@app.command()
-def generate(
-    prompt: str = typer.Argument(
-        ...,
-        help="Description of image to generate"
-    ),
-    style: str = typer.Option(
-        "simple",
-        "--style", "-s",
-        help="Style preset (simple, christmas, nature, pixel_art)"
-    ),
-    size: int = typer.Option(
-        40,
-        "--size",
-        help="Grid size for pattern"
-    ),
-    colors: int = typer.Option(
-        8,
-        "--colors", "-c",
-        help="Number of colors"
-    ),
-    output: Optional[Path] = typer.Option(
-        None,
-        "--output", "-o",
-        help="Output directory"
-    )
-):
-    """Generate a cross-stitch pattern from a text description using AI."""
-    try:
-        from .core.ai_generator import AIGenerator
-        from .prompts.templates import get_template
-    except ImportError as e:
-        console.print(f"[red]Error: AI generation not available - {e}[/red]")
-        raise typer.Exit(1)
-
-    console.print(f"\n[bold blue]XStitchLab[/bold blue] - AI Pattern Generation\n")
-    console.print(f"  Prompt: {prompt}")
-    console.print(f"  Style: {style}\n")
-
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
-        task = progress.add_task("Generating image with DALL-E...", total=None)
-
-        generator = AIGenerator()
-        enhanced_prompt = get_template(style, prompt)
-        image_path = generator.generate(enhanced_prompt)
-
-        progress.update(task, completed=True)
-
-    console.print(f"[green]✓[/green] Image generated: {image_path}\n")
-
-    # Now convert to pattern
-    result, original = _run(Path(image_path), default_recipe("photo", width=size, n_colors=colors), title=prompt[:30])
-    pattern, pixelated = result.pattern, _last_image(result)
-
-    output_dir = output or Path.cwd()
-    exporter = PNGExporter(output_dir)
-    exports = exporter.export_all(pattern, "generated_pattern", original, pixelated)
-
-    console.print("[green]✓[/green] Pattern created!\n")
-
-    for name, path in exports.items():
-        console.print(f"  • {name}: {path}")
 
 
 @app.command()
@@ -429,97 +372,99 @@ def palette():
 
 @app.command()
 def estimate(
-    pattern_file: Path = typer.Argument(
-        ...,
-        help="Path to pattern JSON file",
-        exists=True
-    ),
-    fabric_count: int = typer.Option(
-        14,
-        "--fabric", "-f",
-        help="Aida fabric count (14, 16, or 18)"
-    ),
-    wastage: float = typer.Option(
-        0.2,
-        "--wastage", "-w",
-        help="Thread wastage factor (0.1-0.3)"
-    )
+    path: Path = typer.Argument(..., help="Design directory or pattern JSON file", exists=True),
+    fabric_count: Optional[int] = typer.Option(None, "--fabric", "-f", help="Aida fabric count (default: the pattern's, usually 14)"),
 ):
-    """Estimate thread requirements for a pattern."""
-    try:
-        from .core.thread_calc import ThreadCalculator
-    except ImportError:
-        console.print("[red]Thread calculator not available[/red]")
-        raise typer.Exit(1)
+    """Thread per colour: length, skeins, and 60cm kit sections (backstitch included)."""
+    from .export import threads
 
-    pattern = Pattern.from_json(pattern_file)
-    calc = ThreadCalculator(fabric_count=fabric_count, wastage_factor=wastage)
-
-    estimates = calc.estimate_all(pattern)
+    pattern = _load_pattern(path)
+    rows = threads.estimate(pattern, fabric_count=fabric_count)
+    total = threads.totals(rows)
+    count = fabric_count or pattern.metadata.fabric_count
 
     console.print(f"\n[bold]Thread Estimates for {pattern.metadata.title}[/bold]\n")
-    console.print(f"Fabric: {fabric_count}-count Aida")
-    console.print(f"Size: {pattern.metadata.width}×{pattern.metadata.height} stitches\n")
+    console.print(f"Fabric: {count}-count Aida")
+    console.print(f"Size: {pattern.width}×{pattern.height} stitches, {total['stitches']:,} stitched\n")
 
     table = Table(title="Shopping List")
-    table.add_column("DMC Code", style="cyan")
+    table.add_column("DMC", style="cyan")
     table.add_column("Name", style="white")
-    table.add_column("Stitches")
-    table.add_column("Meters")
-    table.add_column("Skeins")
+    table.add_column("Stitches", justify="right")
+    table.add_column("Thread", justify="right")
+    table.add_column("Skeins", justify="right")
+    table.add_column("60cm sections", justify="right")
 
-    total_skeins = 0
-    for est in estimates:
+    for row in rows:
+        if row["is_background"]:
+            table.add_row(row["dmc_code"], f"{row['name']} [dim](fabric, not stitched)[/dim]", f"{row['stitch_count']:,}", "-", "-", "-")
+            continue
+        stitches = f"{row['stitch_count']:,}" + (" segs" if row["is_backstitch"] else "")
         table.add_row(
-            est["dmc_code"],
-            est["name"],
-            f"{est['stitch_count']:,}",
-            f"{est['meters']:.1f}",
-            str(est["skeins"])
+            row["dmc_code"], row["name"], stitches,
+            f"{row['meters'] * 100:.0f}cm", str(row["skeins"]), str(row["sections_60cm"]),
         )
-        total_skeins += est["skeins"]
-
+    table.add_row("", "[bold]Total[/bold]", "", f"[bold]{total['meters']:.1f}m[/bold]",
+                  f"[bold]{total['skeins']}[/bold]", f"[bold]{total['sections_60cm']}[/bold]")
     console.print(table)
-    console.print(f"\n[bold]Total Skeins Needed: {total_skeins}[/bold]")
+
+
+def _export(design_dir: Path, kind: str, layout: Optional[str]) -> Path:
+    if kind not in EXPORT_KINDS:
+        raise typer.BadParameter(f"--kind must be one of {', '.join(EXPORT_KINDS)}, got {kind!r}")
+    folder = _design_folder(design_dir)
+    try:
+        pattern = folder.read_pattern()
+        out = folder.export_path(kind, layout)
+    except LibraryError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1)
+
+    if kind == "sheet":
+        from .export.pattern_sheet import generate_pattern_sheet
+        generate_pattern_sheet(
+            pattern, layout=layout or "a4", title=folder.title,
+            history=folder.read_history(), output_path=out,
+        )
+    elif kind == "pdf":
+        from .export.pdf_exporter import quick_export_pdf
+        quick_export_pdf(pattern, out)
+    elif kind == "json":
+        folder.write_pattern(pattern)
+    else:
+        from .core.visualizer import render_color_preview, render_symbol_grid, render_thread_realistic
+        render = {
+            "png-color": render_color_preview,
+            "png-symbol": render_symbol_grid,
+            "png-realistic": render_thread_realistic,
+        }[kind]
+        render(pattern).save(out, "PNG")
+    return out
+
+
+@app.command()
+def export(
+    design_dir: Path = typer.Argument(..., help="Design directory (designs/<slug>)", exists=True),
+    kind: str = typer.Option("sheet", "--kind", "-k", help=f"One of: {', '.join(EXPORT_KINDS)}"),
+    layout: Optional[str] = typer.Option(None, "--layout", "-l", help="Sheet layout: a4 (default) or a5"),
+):
+    """Write one export into the design directory (see DesignFolder.export_path for names).
+
+    Sheets take their story text from <design_dir>/history.md when present.
+    """
+    out = _export(design_dir, kind, layout)
+    console.print(f"[green]✓[/green] Wrote {out}")
+    if kind == "sheet":
+        console.print(f"  Open in Chrome → Cmd+P → {(layout or 'a4').upper()} → No margins → Background graphics → Save as PDF")
 
 
 @app.command("pattern-sheet")
 def pattern_sheet(
-    design: Path = typer.Argument(
-        ...,
-        help="Path to design JSON file",
-        exists=True
-    ),
-    output: Optional[Path] = typer.Option(
-        None,
-        "--output", "-o",
-        help="Output HTML file path (defaults to <design>_pattern_sheet.html)"
-    ),
-    open_browser: bool = typer.Option(
-        True,
-        "--open/--no-open",
-        help="Open the generated HTML in your browser"
-    )
+    design_dir: Path = typer.Argument(..., help="Design directory (designs/<slug>)", exists=True),
+    layout: Optional[str] = typer.Option(None, "--layout", "-l", help="Sheet layout: a4 (default) or a5"),
 ):
-    """Generate a branded A5 pattern sheet from a design JSON.
-
-    Creates an HTML file that you print to PDF via Chrome (Cmd+P, A5, no margins).
-    """
-    from .export.pattern_sheet.generate import generate_pattern_sheet
-    import webbrowser
-
-    console.print(f"\n[bold blue]XStitchLab[/bold blue] - Pattern Sheet Generator\n")
-
-    output_path = generate_pattern_sheet(
-        str(design),
-        str(output) if output else None
-    )
-
-    console.print(f"\n[green]✓[/green] Pattern sheet generated: {output_path}")
-    console.print("  Open in Chrome → Cmd+P → A5 → No margins → Background graphics → Save as PDF\n")
-
-    if open_browser:
-        webbrowser.open(f"file://{output_path.resolve()}")
+    """Alias of `export --kind sheet`."""
+    export(design_dir, "sheet", layout)
 
 
 def main():

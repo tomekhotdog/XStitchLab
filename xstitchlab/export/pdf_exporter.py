@@ -6,8 +6,8 @@ import io
 from fpdf import FPDF
 
 from ..core.pattern import Pattern
-from ..core.thread_calc import ThreadCalculator
 from ..core.visualizer import render_color_preview
+from . import threads
 
 # ASCII-safe symbols for PDF (Helvetica compatible)
 PDF_SYMBOLS = [
@@ -69,40 +69,44 @@ class PDFExporter:
         base_name: str = "pattern",
         include_preview: bool = True,
         include_shopping_list: bool = True,
-        fabric_count: int = 14
+        fabric_count: Optional[int] = None
     ) -> Path:
-        """Export pattern to PDF.
+        """Export pattern to `<output_dir>/<base_name>_pattern.pdf` (see `export_to`)."""
+        return self.export_to(
+            pattern, self.output_dir / f"{base_name}_pattern.pdf",
+            include_preview=include_preview, include_shopping_list=include_shopping_list,
+            fabric_count=fabric_count,
+        )
+
+    def export_to(
+        self,
+        pattern: Pattern,
+        output_path: Path | str,
+        *,
+        include_preview: bool = True,
+        include_shopping_list: bool = True,
+        fabric_count: Optional[int] = None,
+    ) -> Path:
+        """Write the PDF (cover, legend, symbol grid pages, shopping list) to `output_path`.
 
         Args:
             pattern: Pattern to export
-            base_name: Base filename
-            include_preview: Include color preview image
+            output_path: Where the PDF goes
+            include_preview: Include color preview image on the cover
             include_shopping_list: Include thread shopping list
-            fabric_count: Fabric count for thread estimation
-
-        Returns:
-            Path to exported PDF
+            fabric_count: Fabric count for thread estimation (default: the pattern's)
         """
         pdf = PatternPDF(pattern)
         pdf.alias_nb_pages()
 
-        # Cover page
         self._add_cover_page(pdf, pattern, include_preview)
-
-        # Color legend page
         self._add_legend_page(pdf, pattern)
-
-        # Symbol grid pages
         self._add_grid_pages(pdf, pattern)
-
-        # Shopping list page
         if include_shopping_list:
-            self._add_shopping_list(pdf, pattern, fabric_count)
+            self._add_shopping_list(pdf, pattern, fabric_count or pattern.metadata.fabric_count)
 
-        # Save PDF
-        output_path = self.output_dir / f"{base_name}_pattern.pdf"
+        output_path = Path(output_path)
         pdf.output(str(output_path))
-
         return output_path
 
     def _add_cover_page(
@@ -188,8 +192,9 @@ class PDFExporter:
         pdf.set_font("Helvetica", "", 10)
 
         for i, entry in enumerate(pattern.legend):
-            # Symbol (use PDF-safe ASCII symbol)
-            pdf.cell(col_widths[0], 8, get_pdf_symbol(i), border=1, align="C")
+            is_background = i == pattern.background_index
+            # Symbol (use PDF-safe ASCII symbol; the background has none)
+            pdf.cell(col_widths[0], 8, "-" if is_background else get_pdf_symbol(i), border=1, align="C")
 
             # Color swatch
             x, y = pdf.get_x(), pdf.get_y()
@@ -206,7 +211,8 @@ class PDFExporter:
             pdf.cell(col_widths[3], 8, entry.dmc_color.code, border=1, align="C")
 
             # Stitch count
-            pdf.cell(col_widths[4], 8, f"{entry.stitch_count:,}", border=1, align="R")
+            stitches = "fabric (not stitched)" if is_background else f"{entry.stitch_count:,}"
+            pdf.cell(col_widths[4], 8, stitches, border=1, align="R")
 
             pdf.ln()
 
@@ -281,9 +287,9 @@ class PDFExporter:
 
                         pdf.rect(x, y, cell_size_mm, cell_size_mm)
 
-                        # Draw symbol (use PDF-safe ASCII symbol)
+                        # Draw symbol (use PDF-safe ASCII symbol); background cells stay blank
                         color_idx = pattern.grid[row][col]
-                        if 0 <= color_idx < len(pattern.legend):
+                        if 0 <= color_idx < len(pattern.legend) and color_idx != pattern.background_index:
                             symbol = get_pdf_symbol(color_idx)
                             pdf.set_xy(x, y)
                             pdf.cell(cell_size_mm, cell_size_mm, symbol, align="C")
@@ -305,14 +311,12 @@ class PDFExporter:
         pdf.set_font("Helvetica", "", 10)
         pdf.cell(0, 6, f"Fabric: {fabric_count}-count Aida")
         pdf.ln()
-        pdf.cell(0, 6, "Strands: 2 (standard)")
-        pdf.ln()
-        pdf.cell(0, 6, "Includes 20% wastage allowance")
+        pdf.cell(0, 6, "Strands: 2 for cross stitch, 1 for backstitch (wastage included)")
         pdf.ln(10)
 
-        # Calculate thread estimates
-        calc = ThreadCalculator(fabric_count=fabric_count)
-        estimates = calc.estimate_all(pattern)
+        # Thread estimates (kit rule; background colour needs no thread)
+        estimates = [e for e in threads.estimate(pattern, fabric_count=fabric_count) if not e["is_background"]]
+        total = threads.totals(estimates)
 
         # Table
         pdf.set_font("Helvetica", "B", 10)
@@ -327,40 +331,26 @@ class PDFExporter:
 
         pdf.set_font("Helvetica", "", 10)
 
-        total_skeins = 0
-        total_meters = 0.0
-
         for est in estimates:
+            count = f"{est['stitch_count']:,}" + (" segs" if est["is_backstitch"] else "")
             pdf.cell(col_widths[0], 7, est["dmc_code"], border=1, align="C")
             pdf.cell(col_widths[1], 7, est["name"][:28], border=1)
-            pdf.cell(col_widths[2], 7, f"{est['stitch_count']:,}", border=1, align="R")
+            pdf.cell(col_widths[2], 7, count, border=1, align="R")
             pdf.cell(col_widths[3], 7, f"{est['meters']:.1f}", border=1, align="R")
             pdf.cell(col_widths[4], 7, str(est["skeins"]), border=1, align="C")
             pdf.ln()
 
-            total_skeins += est["skeins"]
-            total_meters += est["meters"]
-
         # Totals row
         pdf.set_font("Helvetica", "B", 10)
         pdf.cell(col_widths[0] + col_widths[1] + col_widths[2], 8, "TOTAL", border=1, align="R")
-        pdf.cell(col_widths[3], 8, f"{total_meters:.1f}m", border=1, align="R")
-        pdf.cell(col_widths[4], 8, str(total_skeins), border=1, align="C")
+        pdf.cell(col_widths[3], 8, f"{total['meters']:.1f}m", border=1, align="R")
+        pdf.cell(col_widths[4], 8, str(total["skeins"]), border=1, align="C")
 
 
 def quick_export_pdf(
     pattern: Pattern,
     output_path: Path | str
 ) -> Path:
-    """Quick export pattern to PDF.
-
-    Args:
-        pattern: Pattern to export
-        output_path: Full path for output file
-
-    Returns:
-        Path to exported file
-    """
+    """Export `pattern` to exactly `output_path`."""
     output_path = Path(output_path)
-    exporter = PDFExporter(output_path.parent)
-    return exporter.export_pattern(pattern, output_path.stem)
+    return PDFExporter(output_path.parent).export_to(pattern, output_path)

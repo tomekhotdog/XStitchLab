@@ -1,35 +1,29 @@
 # Pattern Sheet Generator
 
-Generates branded A5 pattern sheets as HTML files from design JSON files. These are the printable stitching guides included in each kit.
+Generates branded pattern sheets as HTML files from a design folder. These are the printable stitching guides included in each kit. Two layouts: **A4 landscape** (chart beside the story, colour key and stitch guide; the one the kits ship with) and **A5 portrait** (chart over legend).
 
 ## CLI Usage
 
-Via the `xstitch` CLI (recommended):
-
 ```bash
-# Generate and open in browser
-xstitch pattern-sheet designs/01-three-brothers-riga/design.json
+# A4 (default) → designs/01-three-brothers-riga/pattern_sheet_a4.html
+xstitch export designs/01-three-brothers-riga --kind sheet
 
-# Specify output path
-xstitch pattern-sheet designs/01-three-brothers-riga/design.json -o designs/01-three-brothers-riga/pattern_sheet_a4.html
+# A5 → designs/01-three-brothers-riga/pattern_sheet_a5.html
+xstitch export designs/01-three-brothers-riga --kind sheet --layout a5
 
-# Generate without opening browser
-xstitch pattern-sheet --no-open designs/01-three-brothers-riga/design.json
+# `pattern-sheet` is an alias of `export --kind sheet`
+xstitch pattern-sheet designs/01-three-brothers-riga
 ```
 
-Or directly via the module:
+The story paragraph on the A4 sheet comes from `designs/<slug>/history.md` (plain text, one paragraph); the title from `design.json`.
 
-```bash
-python3 -m xstitchlab.export.pattern_sheet.generate <design.json> [output.html]
-```
-
-If no output path is given, the HTML is written alongside the input JSON as `<name>_pattern_sheet.html`.
+From Python: `xstitchlab.export.pattern_sheet.generate_pattern_sheet(pattern, layout="a4"|"a5", title=..., history=..., output_path=...)`.
 
 ## Printing to PDF
 
 1. Open the generated `.html` file in Chrome
 2. Cmd+P (or Ctrl+P)
-3. Set paper size to **A5**
+3. Set paper size to **A4** (landscape) or **A5** to match the layout
 4. Set margins to **None**
 5. Enable **Background graphics**
 6. Save as PDF
@@ -58,21 +52,22 @@ Colour palette (matches xstitchlabs.com):
 
 ## Files
 
-- `xstitchlab/export/pattern_sheet/template.html` — the HTML/CSS template
-- `xstitchlab/export/pattern_sheet/generate.py` — the Python generator
-- `xstitchlab/cli.py` — `pattern-sheet` command entry point
+- `xstitchlab/export/pattern_sheet.py` — the generator (A4 HTML/CSS inline, shared chart/legend builders)
+- `xstitchlab/export/pattern_sheet_a5.html` — the A5 HTML/CSS template
+- `xstitchlab/cli.py` — `export --kind sheet` / `pattern-sheet` commands
+- `designs/<slug>/history.md` — the story text shown on the A4 sheet
 
 ## How It Works
 
-The generator reads a design JSON and fills in the HTML template:
+The generator takes a `Pattern` (background from `background_index`, outline from `backstitch`):
 
-1. Calculates cell size to fit the grid within A5 dimensions (auto-scales, capped at 1.5–4mm)
-2. Builds an HTML `<table>` with coloured cells and letter symbols
+1. Calculates cell size to fit the grid within the layout's chart area (auto-scales, capped at 1.5–4mm)
+2. Builds an HTML `<table>` with coloured cells and letter symbols (background cells blank)
 3. Generates an SVG overlay for backstitch segments
 4. Builds the legend table
-5. Substitutes all placeholders in the template
+5. Renders the A4 page or substitutes the placeholders in the A5 template
 
-## Editing the Template
+## Editing the A5 Template
 
 The template is plain HTML/CSS. Edit it directly and re-run the generator to see changes. Template variables use `{{ variable }}` syntax (simple string replacement, not Jinja2).
 

@@ -5,7 +5,6 @@ with cohesive color blocks, straight edges, and minimal noise.
 """
 
 import numpy as np
-from PIL import Image
 from typing import Optional
 from dataclasses import dataclass
 from scipy import ndimage
@@ -959,18 +958,3 @@ def adjust_pattern(
         stats["colors_removed"] = len(palette) - len(new_palette)
 
     return result, palette, stats
-
-
-def indices_to_image(indices: np.ndarray, palette: np.ndarray) -> Image.Image:
-    """Convert color indices back to an RGB image.
-
-    Args:
-        indices: 2D array of color indices
-        palette: Color palette array (n_colors, 3)
-
-    Returns:
-        PIL Image in RGB mode
-    """
-    h, w = indices.shape
-    rgb_array = palette[indices.flatten()].reshape(h, w, 3)
-    return Image.fromarray(rgb_array.astype(np.uint8))

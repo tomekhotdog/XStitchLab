@@ -1,11 +1,16 @@
-"""Visualization tools for cross-stitch patterns."""
+"""Visualization tools for cross-stitch patterns.
+
+Cells at `pattern.background_index` are bare fabric in every render, and
+`pattern.backstitch` is drawn on top of the colour and realistic previews.
+"""
 
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from typing import Optional
 from pathlib import Path
 
-from .pattern import Pattern, DMCColor
+from .backstitch import render_backstitch
+from .pattern import Pattern
 
 
 def get_font(size: int = 12) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
@@ -32,17 +37,16 @@ def render_color_preview(
     cell_size: int = 10,
     show_grid: bool = True,
     grid_major: int = 10,
-    backstitch_segments: Optional[list[dict]] = None,
 ) -> Image.Image:
     """Render pattern as colored blocks (how it will look when stitched).
+
+    Background cells stay white (fabric); `pattern.backstitch` is drawn on top.
 
     Args:
         pattern: The Pattern object
         cell_size: Size of each cell in pixels
         show_grid: Whether to show grid lines
         grid_major: Draw thicker lines every N cells
-        backstitch_segments: Optional list of backstitch line segments,
-            each a dict with 'start' and 'end' keys as [x, y] grid coords.
 
     Returns:
         PIL Image with color preview
@@ -56,7 +60,7 @@ def render_color_preview(
     # Draw colored cells
     for y, row in enumerate(pattern.grid):
         for x, color_idx in enumerate(row):
-            if 0 <= color_idx < len(pattern.legend):
+            if 0 <= color_idx < len(pattern.legend) and color_idx != pattern.background_index:
                 color = pattern.legend[color_idx].dmc_color.rgb
                 x0, y0 = x * cell_size, y * cell_size
                 x1, y1 = x0 + cell_size, y0 + cell_size
@@ -77,16 +81,11 @@ def render_color_preview(
             color = major_color if i % grid_major == 0 else grid_color
             draw.line([(0, y), (width, y)], fill=color)
 
-    # Draw backstitch outlines
-    if backstitch_segments:
-        bs_width = max(1, int(cell_size * 0.15))
-        for seg in backstitch_segments:
-            sx, sy = seg["start"]
-            ex, ey = seg["end"]
-            draw.line(
-                [(sx * cell_size, sy * cell_size), (ex * cell_size, ey * cell_size)],
-                fill=(10, 10, 10), width=bs_width,
-            )
+    if pattern.backstitch:
+        img = render_backstitch(
+            img, pattern.backstitch, cell_size,
+            color=(10, 10, 10), line_width=max(1, int(cell_size * 0.15)),
+        )
 
     return img
 
@@ -120,10 +119,10 @@ def render_symbol_grid(
         font_size = max(8, cell_size - 6)
     font = get_font(font_size)
 
-    # Draw symbols
+    # Draw symbols (background cells are left blank, as on a stitching chart)
     for y, row in enumerate(pattern.grid):
         for x, color_idx in enumerate(row):
-            if 0 <= color_idx < len(pattern.legend):
+            if 0 <= color_idx < len(pattern.legend) and color_idx != pattern.background_index:
                 symbol = pattern.legend[color_idx].symbol
                 cx = x * cell_size + cell_size // 2
                 cy = y * cell_size + cell_size // 2
@@ -163,20 +162,18 @@ def render_thread_realistic(
     pattern: Pattern,
     cell_size: int = 20,
     thread_width: float = 0.7,
-    backstitch_segments: Optional[list[dict]] = None,
 ) -> Image.Image:
     """Render pattern with realistic thread texture via 2x supersampling.
 
     Produces an image that simulates how the finished cross-stitch looks:
     cream Aida fabric with textured X stitches showing thread depth,
-    anti-aliased strokes, and subtle shading.
+    anti-aliased strokes, and subtle shading. Background cells show bare
+    fabric; `pattern.backstitch` is drawn on top.
 
     Args:
         pattern: The Pattern object
         cell_size: Size of each cell in output pixels (rendered at 2x internally)
         thread_width: Width of thread relative to cell (0-1)
-        backstitch_segments: Optional list of backstitch line segments,
-            each a dict with 'start' and 'end' keys as [x, y] grid coords.
 
     Returns:
         PIL Image with realistic thread appearance
@@ -222,7 +219,7 @@ def render_thread_realistic(
     # --- Draw stitches ---
     for y, row in enumerate(pattern.grid):
         for x, color_idx in enumerate(row):
-            if not (0 <= color_idx < len(pattern.legend)):
+            if not (0 <= color_idx < len(pattern.legend)) or color_idx == pattern.background_index:
                 continue
 
             r, g, b = pattern.legend[color_idx].dmc_color.rgb
@@ -282,16 +279,14 @@ def render_thread_realistic(
             )
 
     # --- Backstitch outlines (drawn on top of all stitches) ---
-    if backstitch_segments:
+    if pattern.backstitch:
         bs_width = max(2, int(cs * 0.12))
         bs_shadow = max(1, bs_width // 2)
 
-        for seg in backstitch_segments:
-            sx, sy = seg["start"]
-            ex, ey = seg["end"]
+        for seg in pattern.backstitch:
             # Coordinates are in grid-corner units → multiply by cell size
-            px0, py0 = int(sx * cs), int(sy * cs)
-            px1, py1 = int(ex * cs), int(ey * cs)
+            px0, py0 = seg.x1 * cs, seg.y1 * cs
+            px1, py1 = seg.x2 * cs, seg.y2 * cs
 
             # Shadow underneath for depth
             draw.line(
@@ -380,8 +375,10 @@ def render_legend(
         text = f"DMC {entry.dmc_color.code}"
         draw.text((x + swatch_size + 25, y + 2), text, fill=(0, 0, 0), font=small_font)
 
-        # Stitch count
-        if entry.stitch_count > 0:
+        # Stitch count (the background entry is fabric, not stitched)
+        if i == pattern.background_index:
+            draw.text((x + swatch_size + 25, y + 14), "(fabric)", fill=(100, 100, 100), font=small_font)
+        elif entry.stitch_count > 0:
             count_text = f"({entry.stitch_count})"
             draw.text((x + swatch_size + 25, y + 14), count_text, fill=(100, 100, 100), font=small_font)
 
