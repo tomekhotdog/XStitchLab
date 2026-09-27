@@ -1,5 +1,8 @@
 # Benchmark log
 
+> **Fabric-naming ops.** A `substitute_colour`/`merge_colours` whose target is `White` or `B5200` near the end of a recipe (Lübeck 813→White, Tallinn 827→White, Gdańsk 813→B5200, Bergen 762/3768/3830→White) renames the sky or a near-white region to the exact fabric entry the hand-finished file uses. Gdańsk's final names its fabric B5200, the others White. Fabric-vs-fabric already scores as a match, so these ops do not raise the score; they make the diff render and the exported legend agree with the final. Bergen's merges of 3830 (ground strip) and 3768 also remove content the final left as fabric, which is why they change the score.
+
+
 Append-only record of recipe tuning against `tools/benchmark.py` (`exact` = fraction of
 cells whose DMC code matches the committed final; fabric-vs-fabric counts as a match).
 One row per attempt. "pre(W)" = `quantize_image kmeans n_colors=8` + `pixelate width=W

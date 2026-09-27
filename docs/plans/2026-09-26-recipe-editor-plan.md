@@ -473,8 +473,10 @@ Commit: `feat(ops): background_to_fabric, substitute_colour, merge_colours, crop
 
 ---
 
-### Task 6: Author a recipe for each of the five designs and turn the benchmark into a test
+### Task 6: Author a recipe for each of the five designs and turn the benchmark into a test ✅ DONE (bc62c1e)
 **Depends on:** Tasks 3, 4, 5
+
+> Outcome: 218 tests pass. Scores: Riga 0.906, Lübeck 0.954, Bergen 0.893, Tallinn 0.900, Gdańsk 0.783 (thresholds score−0.02 floored). All five design.json files are canonical with recipes and display titles; grid/legend/backstitch/background verified unchanged. Follow-up: the diff render paints fabric red when the candidate names it differently (score already ignores it).
 
 **Files:**
 - Modify: `designs/01-three-brothers-riga/design.json` … `designs/05-artus-gdansk/design.json` (add `recipe`, migrate to canonical shape via `Pattern.from_dict(...).to_dict()` — but keep `id`? No: drop `id`, `pipeline_stages`, `adjustment_stats`; the grid, legend, backstitch, and background must be byte-for-byte equivalent in meaning).
