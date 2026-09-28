@@ -49,8 +49,8 @@ def test_create_writes_design_md_stub(root):
     assert (folder.path / "design.md").read_text() == "# Town Wall, Visby\n"
     assert folder.title == "Town Wall, Visby"
     assert not (folder.has_input or folder.has_pattern or folder.has_prompt)
-    # Listed once it holds a prompt, input, or pattern.
-    assert "06-visby" not in [f.slug for f in DesignFolder.list(root)]
+    # design.md is itself a marker, so a new folder is listed straight away.
+    assert "06-visby" in [f.slug for f in DesignFolder.list(root)]
     folder.write_prompt("brief")
     assert "06-visby" in [f.slug for f in DesignFolder.list(root)]
 
