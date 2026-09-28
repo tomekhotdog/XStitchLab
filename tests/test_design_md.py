@@ -69,7 +69,8 @@ def test_background_note_names_the_fabric_colour(committed):
     pattern = committed.read_pattern()
     bg = pattern.legend[pattern.background_index].dmc_color
     rendered = design_md.render(pattern, committed)
-    assert f"*Note: DMC {bg.code} ({bg.name}) is the background colour and is not stitched.*" in rendered
+    label = bg.name if bg.code == bg.name else f"DMC {bg.code} ({bg.name})"  # "White is …", not "DMC White (White) is …"
+    assert f"*Note: {label} is the background colour and is not stitched.*" in rendered
     assert not any(r["code"] == bg.code and not r["stitches"].endswith("segs") for r in thread_rows(rendered))
 
 

@@ -62,7 +62,8 @@ def render(pattern: Pattern, folder: "DesignFolder") -> str:
     background = pattern.background_index
     if background is not None and 0 <= background < len(pattern.legend):
         colour = pattern.legend[background].dmc_color
-        lines += ["", f"*Note: DMC {colour.code} ({colour.name}) is the background colour and is not stitched.*"]
+        label = colour.name if colour.code == colour.name else f"DMC {colour.code} ({colour.name})"
+        lines += ["", f"*Note: {label} is the background colour and is not stitched.*"]
     if tail:
         lines += ["", tail]
     return "\n".join(lines).rstrip("\n") + "\n"

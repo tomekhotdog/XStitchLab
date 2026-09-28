@@ -157,3 +157,8 @@ def test_default_root_env_override(monkeypatch, tmp_path):
     assert default_root() == Path(__file__).resolve().parent.parent / "designs"
     monkeypatch.setenv("XSTITCH_DESIGNS_DIR", str(tmp_path))
     assert default_root() == tmp_path
+
+
+def test_created_folder_is_listed_before_it_has_a_prompt(root):
+    DesignFolder.create(root, "99-new", "New")
+    assert "99-new" in [f.slug for f in DesignFolder.list(root)]

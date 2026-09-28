@@ -19,7 +19,7 @@ from xstitchlab.library import LibraryError
 
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 _SKIP_NAMES = {"outputs", "test_renders"}
-_MARKERS = ("prompt.md", "input.png", "design.json")
+_MARKERS = ("prompt.md", "input.png", "design.json", "design.md")
 _EXPORTS = {
     "png-color": "preview_color.png",
     "png-symbol": "preview_symbol.png",
@@ -52,7 +52,8 @@ class DesignFolder:
     def list(root: Path) -> list["DesignFolder"]:
         """Design folders under `root`, sorted by slug.
 
-        A directory counts when it holds a prompt, input, or pattern; names
+        A directory counts when it holds a prompt, input, pattern, or design.md
+        (so a folder fresh from `create` is listed); names
         starting with "_" and the `outputs`/`test_renders` scratch dirs are skipped.
         """
         root = Path(root)
