@@ -19,12 +19,20 @@ class OpParams(BaseModel):
 
 
 class OpError(Exception):
-    """Raised for unknown ops, invalid recipes/params, or failures inside an op."""
+    """Raised for unknown ops, invalid recipes, or failures inside an op."""
 
     def __init__(self, message: str, step_index: int | None = None, op: str | None = None):
         super().__init__(message)
         self.step_index = step_index
         self.op = op
+
+
+class OpParamError(OpError):
+    """An op call's params failed validation; `errors` holds the pydantic error list."""
+
+    def __init__(self, message: str, step_index: int, op: str, errors: list):
+        super().__init__(message, step_index, op)
+        self.errors = errors
 
 
 @runtime_checkable

@@ -278,7 +278,7 @@ class Pattern:
         recipe = [OpCall.from_dict(c) for c in (data.get("recipe") or [])]
 
         pattern = cls(
-            grid=[list(row) for row in data["grid"]],
+            grid=_rectangular_grid(data["grid"]),
             legend=legend,
             metadata=metadata,
             backstitch=backstitch,
@@ -297,6 +297,13 @@ class Pattern:
         with open(path) as f:
             data = json.load(f)
         return cls.from_dict(data)
+
+
+def _rectangular_grid(rows) -> list[list[int]]:
+    grid = [list(row) for row in rows]
+    if grid and any(len(row) != len(grid[0]) for row in grid):
+        raise ValueError("grid rows must all have the same length")
+    return grid
 
 
 class DMCPalette:

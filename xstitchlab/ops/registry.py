@@ -11,7 +11,7 @@ from PIL import Image
 from pydantic import ValidationError
 
 from xstitchlab.core.pattern import OpCall, Pattern
-from xstitchlab.ops.base import KINDS, OpError, RunResult, Step
+from xstitchlab.ops.base import KINDS, OpError, OpParamError, RunResult, Step
 
 _REQUIRED_ATTRS = ("NAME", "KIND", "GROUP", "TITLE", "DESCRIPTION", "Params", "apply")
 _SKIP_MODULES = {"base", "registry"}
@@ -110,7 +110,7 @@ def _params_at(op, call: OpCall, i: int):
     try:
         return op.Params(**call.params)
     except ValidationError as e:
-        raise OpError(f"{call.op}: invalid params: {e}", i, call.op) from e
+        raise OpParamError(f"{call.op}: invalid params: {e}", i, call.op, e.errors(include_url=False)) from e
 
 
 # --- execution ---------------------------------------------------------------

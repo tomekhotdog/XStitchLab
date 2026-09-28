@@ -1,8 +1,8 @@
 """Map library and op errors to HTTP responses.
 
-OpError -> 400 `{detail, step_index, op}`; an OpError caused by a pydantic
-ValidationError (bad op params) -> 422 with the pydantic errors as `detail`;
-LibraryError -> 400; a bare ValidationError -> 422.
+OpParamError (bad op params) -> 422 with the pydantic errors as `detail`;
+any other OpError -> 400 `{detail, step_index, op}`; LibraryError -> 400;
+a bare ValidationError -> 422.
 """
 
 from fastapi import FastAPI, Request
@@ -11,18 +11,16 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from xstitchlab.library import LibraryError
-from xstitchlab.ops.base import OpError
+from xstitchlab.ops.base import OpError, OpParamError
 
 
 def install(app: FastAPI) -> None:
     @app.exception_handler(OpError)
     async def op_error(request: Request, exc: OpError) -> JSONResponse:
-        cause = exc.__cause__
-        if isinstance(cause, ValidationError):
+        if isinstance(exc, OpParamError):
             return JSONResponse(
                 status_code=422,
-                content={"detail": jsonable_encoder(cause.errors(include_url=False)),
-                         "step_index": exc.step_index, "op": exc.op},
+                content={"detail": jsonable_encoder(exc.errors), "step_index": exc.step_index, "op": exc.op},
             )
         return JSONResponse(
             status_code=400,

@@ -131,3 +131,10 @@ def test_from_dict_tolerates_null_backstitch_and_recipe():
     assert p.backstitch == [] and p.recipe == []
     legacy = {"grid": d["grid"], "legend": d["legend"], "backstitch_segments": None}
     assert Pattern.from_dict(legacy).backstitch == []
+
+
+def test_from_dict_rejects_jagged_grid():
+    d = make_pattern().to_dict()
+    d["grid"][1] = d["grid"][1][:-1]
+    with pytest.raises(ValueError, match="same length"):
+        Pattern.from_dict(d)

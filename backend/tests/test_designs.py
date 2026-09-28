@@ -124,3 +124,10 @@ def test_save_pattern_rewrites_design_json_and_design_md(client, root):
 def test_save_malformed_pattern_is_422(client):
     r = client.put(f"/api/designs/{RIGA}", json={"pattern": {"legend": []}})
     assert r.status_code == 422
+
+
+def test_oversized_input_is_413(client, monkeypatch):
+    from backend.app.routes import designs as designs_routes
+    monkeypatch.setattr(designs_routes, "MAX_INPUT_BYTES", 10)
+    r = client.put("/api/designs/01-three-brothers-riga/input", files={"file": ("big.png", b"x" * 11, "image/png")})
+    assert r.status_code == 413

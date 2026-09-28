@@ -18,6 +18,8 @@ from backend.app.schemas import (
     RunRequest, RunResponse, SavePattern, StepOut, ThreadsResponse,
 )
 
+MAX_INPUT_BYTES = 20 * 1024 * 1024
+
 router = APIRouter(prefix="/api/designs", tags=["designs"])
 
 THUMBNAIL_PX = 160
@@ -69,8 +71,11 @@ def get_input(folder: DesignFolder = Depends(get_folder)):
 
 
 @router.put("/{slug}/input", response_model=DesignSummary)
-async def put_input(folder: DesignFolder = Depends(get_folder), file: UploadFile = File(...)):
-    folder.write_input(await file.read())  # LibraryError (not an image) -> 400
+def put_input(folder: DesignFolder = Depends(get_folder), file: UploadFile = File(...)):
+    data = file.file.read(MAX_INPUT_BYTES + 1)
+    if len(data) > MAX_INPUT_BYTES:
+        raise HTTPException(status_code=413, detail=f"input image larger than {MAX_INPUT_BYTES // (1024 * 1024)} MB")
+    folder.write_input(data)  # LibraryError (not an image) -> 400
     return _summary(folder)
 
 
