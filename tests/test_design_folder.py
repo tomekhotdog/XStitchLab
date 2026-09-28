@@ -162,3 +162,9 @@ def test_default_root_env_override(monkeypatch, tmp_path):
 def test_created_folder_is_listed_before_it_has_a_prompt(root):
     DesignFolder.create(root, "99-new", "New")
     assert "99-new" in [f.slug for f in DesignFolder.list(root)]
+
+
+@pytest.mark.parametrize("slug", ["../escape", "Upper", "a/b", ""])
+def test_constructor_rejects_bad_slugs(root, slug):
+    with pytest.raises(LibraryError):
+        DesignFolder(root, slug)

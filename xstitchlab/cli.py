@@ -445,7 +445,7 @@ def _export(design_dir: Path, kind: str, layout: Optional[str]) -> Path:
 @app.command()
 def export(
     design_dir: Path = typer.Argument(..., help="Design directory (designs/<slug>)", exists=True),
-    kind: str = typer.Option("sheet", "--kind", "-k", help=f"One of: {', '.join(EXPORT_KINDS)}"),
+    kind: str = typer.Option("sheet", "--kind", "-k", help=f"One of: {', '.join(EXPORT_KINDS)}. 'json' rewrites design.json in canonical form and regenerates design.md"),
     layout: Optional[str] = typer.Option(None, "--layout", "-l", help="Sheet layout: a4 (default) or a5"),
 ):
     """Write one export into the design directory (see DesignFolder.export_path for names).

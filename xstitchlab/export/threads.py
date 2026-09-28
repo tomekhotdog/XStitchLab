@@ -1,5 +1,7 @@
-"""Thread estimates per legend entry, plus the backstitch row: one source for
-design.md, the API, and the CLI.
+"""Thread estimates per legend entry, plus the backstitch row: the one source
+for design.md, the CLI, and the PDF (the backend joins in Task 8; the legacy
+`core.thread_calc.ThreadCalculator` uses a different per-count table and is
+slated for deletion once no caller remains).
 
 The maths is the kit rule from `designs/_shared/kit-designs.md`: on 14-count
 Aida a cross stitch uses ~1.5 cm of 2-strand thread and a backstitch unit edge
@@ -11,7 +13,8 @@ thread (180 cm) or 6 x 60 cm of 1-strand thread (360 cm).
 import math
 
 from xstitchlab.core.pattern import Pattern
-from xstitchlab.core.thread_calc import DMC_SKEIN_LENGTH_METERS
+
+DMC_SKEIN_LENGTH_METERS = 8.0
 
 CM_PER_STITCH_14CT = 1.5          # 2 strands, wastage included
 CM_PER_BACKSTITCH_UNIT_14CT = 1.0  # 1 strand, wastage included

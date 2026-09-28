@@ -40,6 +40,8 @@ def default_root() -> Path:
 
 class DesignFolder:
     def __init__(self, root: Path, slug: str):
+        if not SLUG_RE.match(slug):
+            raise LibraryError(f"invalid slug {slug!r}: use lowercase letters, digits, and hyphens")
         self.slug = slug
         self.path = Path(root) / slug
 
