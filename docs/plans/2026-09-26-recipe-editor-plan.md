@@ -545,7 +545,7 @@ Commit: `refactor: design folder library, merged pattern sheet, thread estimates
 ### Task 8: Backend rewrite on the library and registry ✅ DONE (12c5739)
 **Depends on:** Tasks 3, 5, 7
 
-> Outcome: 300 core+backend tests pass (41 backend), benchmark 5 pass. uv workspace; `xstitchlab/library/exports.py` is shared by CLI and API. Deleted `core/thread_calc.py` and the old backend.
+> Outcome: 302 core+backend tests pass (42 backend), benchmark 5 pass. uv workspace; `xstitchlab/library/exports.py` is shared by CLI and API. Deleted `core/thread_calc.py` and the old backend. Review fixes (abc0189): thumbnails via numpy (0.13 s for 400×400, was 10 s); upload handler is sync with a 20 MB cap (413); `OpParamError` drives 422s; jagged grids rejected at `from_dict`.
 >
 > **API contract as built (Task 9 must mirror exactly):**
 > - `DesignSummary` = `{slug, title, has_input, has_prompt, has_pattern, width|null, height|null, colors|null, stitches|null, thumbnail_png|null}` (returned by GET/POST `/api/designs` and PUT `.../input`).
