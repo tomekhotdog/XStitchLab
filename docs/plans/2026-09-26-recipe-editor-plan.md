@@ -542,8 +542,19 @@ Commit: `refactor: design folder library, merged pattern sheet, thread estimates
 
 ---
 
-### Task 8: Backend rewrite on the library and registry
+### Task 8: Backend rewrite on the library and registry ✅ DONE (12c5739)
 **Depends on:** Tasks 3, 5, 7
+
+> Outcome: 300 core+backend tests pass (41 backend), benchmark 5 pass. uv workspace; `xstitchlab/library/exports.py` is shared by CLI and API. Deleted `core/thread_calc.py` and the old backend.
+>
+> **API contract as built (Task 9 must mirror exactly):**
+> - `DesignSummary` = `{slug, title, has_input, has_prompt, has_pattern, width|null, height|null, colors|null, stitches|null, thumbnail_png|null}` (returned by GET/POST `/api/designs` and PUT `.../input`).
+> - `GET /api/designs/{slug}` = `{slug, title, prompt, has_input, pattern|null, history}`.
+> - `PUT /api/designs/{slug}` body `{pattern}` → `{pattern}` (canonical). `PUT .../prompt` and `.../history` body `{text}` → `{text}`.
+> - `POST .../run` body `{recipe: OpCall[]}` → `{pattern, steps: [{name, params, kind, preview_png, stats}]}`; sets the title from the folder when default.
+> - `POST /api/ops/apply` body `{pattern, op, params}` → `{pattern}`. `GET /api/ops` → `[{name, kind, group, title, description, schema}]` (no `test` group). `GET /api/recipes/defaults` → `{predesigned, photo}`. `GET /api/dmc` → `[{code, name, rgb}]`. `GET /api/prompt-template` → `{text}`.
+> - `GET .../export/{kind}?layout=a4|a5` → file (html/pdf/png/json), also written into the folder. `GET .../threads` → `{rows: [{dmc_code, name, rgb, stitch_count, meters, skeins, skeins_decimal, sections_60cm, is_background, is_backstitch}], totals: {stitches, meters, skeins, sections_60cm}}`.
+> - Base64 PNGs are raw (client adds the `data:image/png;base64,` prefix). Errors: `detail` is a string for 400/404/409 and malformed patterns (422); op-param 422 has `detail: [pydantic errors]` plus `step_index`, `op`; slugs with a slash are a plain 404.
 
 **Files:**
 - Modify: `pyproject.toml` root → add `[tool.uv.workspace] members = ["backend"]`; `backend/pyproject.toml` → `dependencies += ["xstitchlab"]` with `[tool.uv.sources] xstitchlab = { workspace = true }`. Remove `sys.path` lines from backend. Update `run-backend.sh`/`run-dev.sh` to `uv run uvicorn backend.app.main:app --reload --port 8000`.
