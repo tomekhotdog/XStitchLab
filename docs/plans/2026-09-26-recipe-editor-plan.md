@@ -499,8 +499,10 @@ Commit: `feat: recipes for the five Hanseatic designs and benchmark thresholds`.
 
 ---
 
-### Task 7: Design folder library and `design.md` regeneration; export consolidation; delete dead code
+### Task 7: Design folder library and `design.md` regeneration; export consolidation; delete dead code ✅ DONE (6fee427 + review fixes)
 **Depends on:** Task 1 (library part) and Task 4 (export part). Can start in parallel with Tasks 3–5 for the library part.
+
+> Outcome: 270 tests pass. Thread maths use the kit rule from `designs/_shared/kit-designs.md` (`export/threads.py`), not `ThreadCalculator` (now backend-only; delete in Task 8 with `adjuster.AdjustmentSettings/adjust_pattern`). A4 sheet is layout A (B was unreachable); regenerated sheets are byte-identical to the committed ones. `DesignFolder` validates slugs on construction. Committed design.md files were not rewritten (Riga/Tallinn/Gdańsk tables are stale vs their grids; the next save fixes them). Follow-ups: move the A4 markup out of `pattern_sheet.py` into a template like A5; `DesignFolder.list` also counts `design.md` as a marker.
 
 **Files:**
 - Create: `xstitchlab/library/__init__.py`, `xstitchlab/library/design_folder.py`, `xstitchlab/library/design_md.py`
