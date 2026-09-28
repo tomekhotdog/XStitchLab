@@ -14,7 +14,7 @@ from xstitchlab.core.visualizer import (
     render_symbol_grid,
     render_legend,
 )
-from xstitchlab.core.thread_calc import ThreadCalculator
+from xstitchlab.export import threads
 from xstitchlab.export.png_exporter import PNGExporter
 
 
@@ -90,12 +90,10 @@ class TestFullPipeline:
         assert exports["color_preview"].exists()
 
         # Step 7: Thread estimation
-        calc = ThreadCalculator(fabric_count=14)
-        estimates = calc.estimate_pattern(pattern)
+        estimates = threads.estimate(pattern, fabric_count=14)
 
         assert len(estimates) == 4
-        total_skeins = sum(e.skeins_needed for e in estimates)
-        assert total_skeins >= 1
+        assert threads.totals(estimates)["skeins"] >= 1
 
     def test_pipeline_with_many_colors(self, gradient_image, temp_dir):
         """Test pipeline handles many colors correctly."""

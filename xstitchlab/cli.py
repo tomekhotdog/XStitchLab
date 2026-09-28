@@ -12,7 +12,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from .core.image_input import load_image, get_image_info
 from .core.pattern import OpCall, Pattern, DMCPalette
 from .export.png_exporter import PNGExporter
-from .library import DesignFolder, LibraryError
+from .library import EXPORT_KINDS, DesignFolder, LibraryError, export_design
 from .ops import registry
 from .ops.base import OpError, RunResult
 from .ops.defaults import DEFAULTS, default_recipe, with_overrides
@@ -23,8 +23,6 @@ app = typer.Typer(
     add_completion=False
 )
 console = Console()
-
-EXPORT_KINDS = ("sheet", "pdf", "png-color", "png-symbol", "png-realistic", "json")
 
 
 def _run(image_path: Path, recipe: list[OpCall], title: Optional[str] = None) -> tuple[RunResult, Image.Image]:
@@ -410,36 +408,12 @@ def estimate(
 
 
 def _export(design_dir: Path, kind: str, layout: Optional[str]) -> Path:
-    if kind not in EXPORT_KINDS:
-        raise typer.BadParameter(f"--kind must be one of {', '.join(EXPORT_KINDS)}, got {kind!r}")
     folder = _design_folder(design_dir)
     try:
-        pattern = folder.read_pattern()
-        out = folder.export_path(kind, layout)
+        return export_design(folder, kind, layout)
     except LibraryError as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1)
-
-    if kind == "sheet":
-        from .export.pattern_sheet import generate_pattern_sheet
-        generate_pattern_sheet(
-            pattern, layout=layout or "a4", title=folder.title,
-            history=folder.read_history(), output_path=out,
-        )
-    elif kind == "pdf":
-        from .export.pdf_exporter import quick_export_pdf
-        quick_export_pdf(pattern, out)
-    elif kind == "json":
-        folder.write_pattern(pattern)
-    else:
-        from .core.visualizer import render_color_preview, render_symbol_grid, render_thread_realistic
-        render = {
-            "png-color": render_color_preview,
-            "png-symbol": render_symbol_grid,
-            "png-realistic": render_thread_realistic,
-        }[kind]
-        render(pattern).save(out, "PNG")
-    return out
 
 
 @app.command()

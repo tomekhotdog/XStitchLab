@@ -1,19 +1,14 @@
-"""FastAPI application entry point."""
+"""FastAPI app: a thin HTTP layer over `xstitchlab.library` and `xstitchlab.ops.registry`."""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import settings
-from .routes import patterns, export
+from backend.app import errors
+from backend.app.config import settings
+from backend.app.routes import designs, ops
 
-app = FastAPI(
-    title=settings.app_name,
-    version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
-)
+app = FastAPI(title=settings.app_name, version="0.2.0", docs_url="/docs", redoc_url="/redoc")
 
-# Configure CORS for frontend development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -22,13 +17,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# Include routers
-app.include_router(patterns.router)
-app.include_router(export.router)
+errors.install(app)
+app.include_router(designs.router)
+app.include_router(ops.router)
 
 
 @app.get("/api/health")
-async def health_check():
-    """Health check endpoint."""
+def health():
     return {"status": "healthy", "app": settings.app_name}

@@ -134,6 +134,9 @@ class DesignFolder:
     def read_history(self) -> str:
         return self._read_text(self.history_path).strip()
 
+    def write_history(self, text: str) -> None:
+        _write_atomic(self.history_path, text.encode())
+
     def read_input(self) -> Image.Image:
         if not self.has_input:
             raise LibraryError(f"{self.slug} has no input.png")

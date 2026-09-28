@@ -17,8 +17,7 @@ echo ""
 > logs/frontend.log
 
 # Start backend in background
-source .venv/bin/activate
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 >> logs/backend.log 2>&1 &
+uv run uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 >> logs/backend.log 2>&1 &
 BACKEND_PID=$!
 
 # Start frontend in background

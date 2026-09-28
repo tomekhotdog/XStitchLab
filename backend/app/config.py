@@ -1,17 +1,23 @@
-"""Application configuration."""
+"""Settings from the environment: `XSTITCH_DESIGNS_DIR` overrides the library root."""
 
-from pydantic_settings import BaseSettings
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from xstitchlab.library import default_root
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment."""
+    model_config = SettingsConfigDict(env_prefix="XSTITCH_")
 
     app_name: str = "XStitchLab API"
-    debug: bool = False
+    designs_dir: Path | None = None
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
-
-    class Config:
-        env_prefix = "XSTITCHLAB_"
 
 
 settings = Settings()
+
+
+def root() -> Path:
+    """The design library root: `XSTITCH_DESIGNS_DIR`, else `<repo>/designs`."""
+    return settings.designs_dir or default_root()

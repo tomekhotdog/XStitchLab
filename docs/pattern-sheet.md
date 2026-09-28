@@ -75,4 +75,4 @@ Available variables: `title`, `cell_size`, `symbol_font_size`, `col_numbers`, `r
 
 ## Webapp Integration
 
-Not currently integrated — the webapp's "Pattern Sheet" export button still uses the older PIL-based renderer. The HTML-based generator is CLI-only for now. For kit production, use the CLI workflow above.
+The API's `GET /api/designs/{slug}/export/sheet?layout=a4|a5` runs the same generator (`xstitchlab.library.export_design`, shared with `xstitch export`), writes `pattern_sheet_<layout>.html` into the design folder, and returns it inline, so the editor's export button and the CLI produce identical sheets.

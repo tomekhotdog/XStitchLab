@@ -1,1 +1,1 @@
-# XStitchLab Backend
+"""XStitchLab backend (FastAPI)."""

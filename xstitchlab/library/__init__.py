@@ -6,5 +6,6 @@ class LibraryError(ValueError):
 
 
 from xstitchlab.library.design_folder import DesignFolder, default_root  # noqa: E402
+from xstitchlab.library.exports import EXPORT_KINDS, MEDIA_TYPES, export_design  # noqa: E402
 
-__all__ = ["DesignFolder", "LibraryError", "default_root"]
+__all__ = ["DesignFolder", "EXPORT_KINDS", "LibraryError", "MEDIA_TYPES", "default_root", "export_design"]
