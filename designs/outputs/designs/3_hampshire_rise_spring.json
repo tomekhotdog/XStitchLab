@@ -4,8 +4,8 @@
     "title": "3_hampshire_rise_spring_gemini",
     "width": 45,
     "height": 42,
-    "color_count": 7,
-    "total_stitches": 1684,
+    "color_count": 6,
+    "total_stitches": 1016,
     "difficulty": "medium",
     "fabric_count": 14,
     "fabric_width_inches": 5.2,
@@ -14,18 +14,18 @@
   },
   "legend": [
     {
-      "symbol": "●",
-      "dmc_code": "3325",
-      "dmc_name": "Baby Blue Light",
+      "symbol": "\u25cf",
+      "dmc_code": "B5200",
+      "dmc_name": "Snow White",
       "rgb": [
-        184,
-        210,
-        230
+        255,
+        255,
+        255
       ],
-      "stitch_count": 874
+      "stitch_count": 862
     },
     {
-      "symbol": "■",
+      "symbol": "\u25a0",
       "dmc_code": "413",
       "dmc_name": "Pewter Gray Dark",
       "rgb": [
@@ -36,7 +36,7 @@
       "stitch_count": 466
     },
     {
-      "symbol": "▲",
+      "symbol": "\u25b2",
       "dmc_code": "3722",
       "dmc_name": "Shell Pink Medium",
       "rgb": [
@@ -47,7 +47,7 @@
       "stitch_count": 235
     },
     {
-      "symbol": "◆",
+      "symbol": "\u25c6",
       "dmc_code": "762",
       "dmc_name": "Pearl Gray Very Light",
       "rgb": [
@@ -58,7 +58,7 @@
       "stitch_count": 206
     },
     {
-      "symbol": "★",
+      "symbol": "\u2605",
       "dmc_code": "701",
       "dmc_name": "Christmas Green Light",
       "rgb": [
@@ -69,7 +69,7 @@
       "stitch_count": 88
     },
     {
-      "symbol": "♦",
+      "symbol": "\u2666",
       "dmc_code": "169",
       "dmc_name": "Pewter Light",
       "rgb": [
@@ -80,7 +80,7 @@
       "stitch_count": 12
     },
     {
-      "symbol": "♣",
+      "symbol": "\u2663",
       "dmc_code": "3021",
       "dmc_name": "Brown Gray Very Dark",
       "rgb": [
