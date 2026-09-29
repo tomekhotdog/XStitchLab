@@ -1,6 +1,9 @@
 /* XStitchLab "workshop" theme. All colours come from tokens.css. */
 @import "./tokens.css";
 
+/* The hidden attribute must win over any component display value (tab panels, menus). */
+[hidden] { display: none !important; }
+
 /* ---------- Base ---------- */
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
@@ -82,7 +85,8 @@ a.card:hover { text-decoration: none; border-color: var(--accent); transform: tr
   background: var(--canvas-fabric); border-bottom: 1px solid var(--rule);
 }
 .card-thumb img { max-width: 100%; max-height: 100%; image-rendering: pixelated; }
-.card-body { padding: var(--s-3) var(--s-4) var(--s-4); display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.card-body { padding: var(--s-3) var(--s-4) var(--s-4); display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.card-body h2 { overflow-wrap: anywhere; }
 .card-body h2 {
   font-family: var(--font-display); font-weight: 600; font-size: 17px; text-transform: none; letter-spacing: -0.005em;
   color: var(--ink); margin-bottom: 2px; line-height: 1.2;
