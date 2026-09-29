@@ -1,3 +1,5 @@
+import threading
+import time
 import types
 
 import pytest
@@ -260,3 +262,26 @@ def test_empty_recipe_has_no_pixelate():
     with pytest.raises(OpError, match="pixelate") as exc:
         registry.validate_recipe([])
     assert exc.value.step_index is None
+
+
+def test_concurrent_lookup_waits_for_discovery_instead_of_seeing_a_partial_registry(monkeypatch):
+    # The API serves requests from a thread pool: a request arriving while another is still
+    # discovering ops must not get "unknown op" for an op that exists.
+    real_import = registry.importlib.import_module
+    discovering = threading.Event()
+
+    def slow_import(name, *args, **kwargs):
+        discovering.set()
+        time.sleep(0.01)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(registry, "_ops", None)
+    monkeypatch.setattr(registry.importlib, "import_module", slow_import)
+    first = threading.Thread(target=registry.schemas)
+    first.start()
+    assert discovering.wait(5)
+
+    op = registry.get("quantize_image")
+
+    first.join()
+    assert op.NAME == "quantize_image"

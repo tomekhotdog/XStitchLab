@@ -6,6 +6,7 @@ Recipe shape: zero or more `image` ops, exactly one `pixelate` op, zero or more
 
 import importlib
 import pkgutil
+import threading
 
 from PIL import Image
 from pydantic import ValidationError
@@ -17,6 +18,9 @@ _REQUIRED_ATTRS = ("NAME", "KIND", "GROUP", "TITLE", "DESCRIPTION", "Params", "a
 _SKIP_MODULES = {"base", "registry"}
 
 _ops: dict[str, object] | None = None
+# Guards discovery: the API serves requests from a thread pool, and a caller must never see a
+# half-built registry (it would answer "unknown op" for an op that exists).
+_discovery_lock = threading.Lock()
 
 
 # --- registry ----------------------------------------------------------------
@@ -24,9 +28,13 @@ _ops: dict[str, object] | None = None
 def register(op) -> None:
     """Register any object exposing the `Operation` attributes, keyed by `NAME`."""
     _ensure_discovered()
+    _check_kind(op)
+    _ops[op.NAME] = op
+
+
+def _check_kind(op) -> None:
     if op.KIND not in KINDS:
         raise OpError(f"{op.NAME}: KIND must be one of {KINDS}, got {op.KIND!r}", op=op.NAME)
-    _ops[op.NAME] = op
 
 
 def reset() -> None:
@@ -62,17 +70,23 @@ def schemas() -> list[dict]:
 
 
 def _ensure_discovered() -> None:
+    """Import every op module once; the registry is published only when complete."""
     global _ops
     if _ops is not None:
         return
-    _ops = {}
-    import xstitchlab.ops as package
-    for info in pkgutil.iter_modules(package.__path__):
-        if info.name in _SKIP_MODULES or info.name.startswith("_"):
-            continue
-        module = importlib.import_module(f"{package.__name__}.{info.name}")
-        if all(hasattr(module, attr) for attr in _REQUIRED_ATTRS):
-            register(module)
+    with _discovery_lock:
+        if _ops is not None:
+            return
+        import xstitchlab.ops as package
+        found: dict[str, object] = {}
+        for info in pkgutil.iter_modules(package.__path__):
+            if info.name in _SKIP_MODULES or info.name.startswith("_"):
+                continue
+            module = importlib.import_module(f"{package.__name__}.{info.name}")
+            if all(hasattr(module, attr) for attr in _REQUIRED_ATTRS):
+                _check_kind(module)
+                found[module.NAME] = module
+        _ops = found
 
 
 # --- validation --------------------------------------------------------------
