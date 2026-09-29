@@ -79,6 +79,8 @@ export interface DesignDetail {
   has_input: boolean;
   pattern: Pattern | null;
   history: string;
+  /** Opaque design.json version; sent back on save so a stale tab gets 409 instead of overwriting. */
+  version: string | null;
 }
 
 export interface Step {

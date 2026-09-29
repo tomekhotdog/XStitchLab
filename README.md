@@ -44,6 +44,17 @@ cd frontend && npm install && cd ..
 Open http://localhost:5173. API docs are at http://localhost:8000/docs.
 `./run-backend.sh` and `./run-frontend.sh` start the servers individually; logs go to `logs/`.
 
+The editor works directly on the design folders in `designs/`: **Save rewrites that design's `design.json` and
+regenerates its `design.md`**, and exports are written into the folder. Git is the undo. The five finished
+Hanseatic designs are also the benchmark's ground truth (`tests/test_benchmark.py`), so an edit to one of them
+can move its score. To experiment without touching them, point the backend at a copy:
+
+```bash
+cp -r designs /tmp/xstitch-designs && XSTITCH_DESIGNS_DIR=/tmp/xstitch-designs ./run-dev.sh
+```
+
+If a design changed on disk after you opened it (another tab, or the CLI), Save is refused and asks you to reload.
+
 ### CLI
 
 ```bash

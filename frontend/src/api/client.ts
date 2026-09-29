@@ -73,8 +73,12 @@ export const savePrompt = (slug: string, text: string) =>
 export const saveHistory = (slug: string, text: string) =>
   request<{ text: string }>(`/designs/${slug}/history`, { method: 'PUT', body: json({ text }) });
 
-export const savePattern = async (slug: string, pattern: Pattern) =>
-  (await request<{ pattern: Pattern }>(`/designs/${slug}`, { method: 'PUT', body: json({ pattern }) })).pattern;
+/** Save; with `version`, the server refuses (409) when design.json changed since that version. */
+export const savePattern = (slug: string, pattern: Pattern, version?: string | null) =>
+  request<{ pattern: Pattern; version: string | null }>(`/designs/${slug}`, {
+    method: 'PUT',
+    body: json(version ? { pattern, version } : { pattern }),
+  });
 
 export const runRecipe = (slug: string, recipe: OpCall[]) =>
   request<RunResponse>(`/designs/${slug}/run`, { method: 'POST', body: json({ recipe }) });

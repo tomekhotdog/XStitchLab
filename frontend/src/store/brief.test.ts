@@ -15,7 +15,7 @@ const summary: DesignSummary = {
   width: null, height: null, colors: null, stitches: null, thumbnail_png: null,
 };
 
-const detail: DesignDetail = { slug: 'riga', title: 'Riga', prompt: 'Draw a house', has_input: false, pattern: null, history: 'Built 1490' };
+const detail: DesignDetail = { slug: 'riga', title: 'Riga', prompt: 'Draw a house', has_input: false, pattern: null, history: 'Built 1490', version: null };
 
 const store = () => useEditorStore.getState();
 const png = () => new File(['x'], 'input.png', { type: 'image/png' });

@@ -169,8 +169,8 @@ def _legend_html(sheet: _Sheet, *, background_row: bool) -> str:
                 rows.append(
                     f"<tr>{swatch}"
                     f'<td class="legend-symbol">—</td>'
-                    f'<td class="legend-dmc">{entry["code"]}</td>'
-                    f'<td class="legend-name">{entry["name"]}</td>'
+                    f'<td class="legend-dmc">{html.escape(str(entry["code"]))}</td>'
+                    f'<td class="legend-name">{html.escape(str(entry["name"]))}</td>'
                     f'<td class="legend-count legend-bg-note">background</td>'
                     f"</tr>"
                 )
@@ -178,8 +178,8 @@ def _legend_html(sheet: _Sheet, *, background_row: bool) -> str:
         rows.append(
             f"<tr>{swatch}"
             f'<td class="legend-symbol">{sheet.symbol(i)}</td>'
-            f'<td class="legend-dmc">{entry["code"]}</td>'
-            f'<td class="legend-name">{entry["name"]}</td>'
+            f'<td class="legend-dmc">{html.escape(str(entry["code"]))}</td>'
+            f'<td class="legend-name">{html.escape(str(entry["name"]))}</td>'
             f'<td class="legend-count">{entry["count"]:,}</td>'
             f"</tr>"
         )

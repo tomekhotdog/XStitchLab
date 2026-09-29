@@ -44,11 +44,12 @@ describe('save', () => {
   it('sends the pattern, adopts the canonical result, clears dirty and history, keeps tool state', async () => {
     const edited = store().pattern!;
     const canonical: Pattern = { ...edited, metadata: { ...edited.metadata, total_stitches: 2 } };
-    vi.mocked(client.savePattern).mockResolvedValue(canonical);
+    vi.mocked(client.savePattern).mockResolvedValue({ pattern: canonical, version: 'v2' });
 
     expect(await store().save()).toBe(true);
 
-    expect(client.savePattern).toHaveBeenCalledWith('riga', edited);
+    expect(client.savePattern).toHaveBeenCalledWith('riga', edited, null);
+    expect(store().version).toBe('v2');
     expect(store().pattern).toBe(canonical);
     expect(store().dirty).toBe(false);
     expect(store().history.undo).toHaveLength(0);
@@ -72,12 +73,12 @@ describe('save', () => {
   });
 
   it('ignores a second call while one is in flight', async () => {
-    let resolve!: (p: Pattern) => void;
-    vi.mocked(client.savePattern).mockReturnValue(new Promise<Pattern>((r) => { resolve = r; }));
+    let resolve!: (p: { pattern: Pattern; version: string | null }) => void;
+    vi.mocked(client.savePattern).mockReturnValue(new Promise((r) => { resolve = r; }));
     const first = store().save();
     expect(store().saving).toBe(true);
     expect(await store().save()).toBe(false);
-    resolve(store().pattern!);
+    resolve({ pattern: store().pattern!, version: 'v2' });
     expect(await first).toBe(true);
     expect(client.savePattern).toHaveBeenCalledTimes(1);
   });
@@ -86,5 +87,20 @@ describe('save', () => {
     store().setPattern(null);
     expect(await store().save()).toBe(false);
     expect(client.savePattern).not.toHaveBeenCalled();
+  });
+});
+
+describe('save with a version', () => {
+  it('sends the loaded version and keeps local edits dirty when the server refuses a stale save', async () => {
+    useEditorStore.setState({ version: 'v1' });
+    vi.mocked(client.savePattern).mockRejectedValue(
+      new ApiError(409, 'design.json changed on disk since you opened it. Reload the design before saving.'),
+    );
+    const edited = store().pattern!;
+    expect(await store().save()).toBe(false);
+    expect(client.savePattern).toHaveBeenCalledWith('riga', edited, 'v1');
+    expect(store().pattern).toBe(edited);
+    expect(store().version).toBe('v1');
+    expect(useToast.getState().message).toContain('Reload');
   });
 });

@@ -27,7 +27,7 @@ API docs available at http://localhost:8000/docs when backend is running.
 ## Tech stack
 
 - **Backend**: Python 3.11+, FastAPI, Uvicorn, uv for package management
-- **Frontend**: Vite (vanilla JS)
+- **Frontend**: React 18 + TypeScript + Vite + zustand (`frontend/`), Playwright e2e
 - **Key libs**: Pillow, NumPy, scikit-learn, colormath, fpdf2
 
 ## Tests

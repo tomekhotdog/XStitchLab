@@ -18,6 +18,7 @@ export const BACKSTITCH_CODE = '310';
 export const BACKSTITCH_NAME = 'Black (Backstitch, 1 strand)';
 const BACKSTITCH_RGB: Rgb = [0, 0, 0];
 
+// Python rounds half to even; at an exact .xx5 the live estimate can differ by 0.01 until the saved value comes back.
 const round2 = (v: number) => Math.round(v * 100) / 100;
 
 /** Stitch count per legend index, derived from the grid. */

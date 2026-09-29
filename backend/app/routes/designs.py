@@ -15,7 +15,7 @@ from backend.app.deps import get_folder, get_root, pattern_from_wire
 from backend.app.previews import image_png_b64, pattern_png_b64
 from backend.app.schemas import (
     ApplyResponse, CreateDesign, DesignDetail, DesignSummary, PromptBody,
-    RunRequest, RunResponse, SavePattern, StepOut, ThreadsResponse,
+    RunRequest, RunResponse, SavePattern, SaveResponse, StepOut, ThreadsResponse,
 )
 
 MAX_INPUT_BYTES = 20 * 1024 * 1024
@@ -60,6 +60,7 @@ def get_design(folder: DesignFolder = Depends(get_folder)):
         has_input=folder.has_input,
         pattern=folder.read_pattern().to_dict() if folder.has_pattern else None,
         history=folder.read_history(),
+        version=folder.pattern_version,
     )
 
 
@@ -91,12 +92,21 @@ def put_history(body: PromptBody, folder: DesignFolder = Depends(get_folder)):
     return body
 
 
-@router.put("/{slug}", response_model=ApplyResponse)
+@router.put("/{slug}", response_model=SaveResponse)
 def save_pattern(body: SavePattern, folder: DesignFolder = Depends(get_folder)):
-    """Write design.json (canonical form) and regenerate design.md; returns the canonical pattern."""
+    """Write design.json (canonical form) and regenerate design.md; returns the canonical pattern.
+
+    When `version` is sent and design.json changed since that version (another tab, the CLI),
+    the save is refused with 409 instead of silently overwriting the newer file.
+    """
     pattern = pattern_from_wire(body.pattern)
+    if body.version is not None and body.version != folder.pattern_version:
+        raise HTTPException(
+            status_code=409,
+            detail="design.json changed on disk since you opened it. Reload the design before saving.",
+        )
     folder.write_pattern(pattern)
-    return ApplyResponse(pattern=pattern.to_dict())
+    return SaveResponse(pattern=pattern.to_dict(), version=folder.pattern_version)
 
 
 @router.post("/{slug}/run", response_model=RunResponse)

@@ -131,3 +131,31 @@ def test_oversized_input_is_413(client, monkeypatch):
     monkeypatch.setattr(designs_routes, "MAX_INPUT_BYTES", 10)
     r = client.put("/api/designs/01-three-brothers-riga/input", files={"file": ("big.png", b"x" * 11, "image/png")})
     assert r.status_code == 413
+
+
+def test_save_with_stale_version_is_refused(client, root):
+    detail = client.get(f"/api/designs/{RIGA}").json()
+    version, pattern = detail["version"], detail["pattern"]
+    assert version
+
+    first = client.put(f"/api/designs/{RIGA}", json={"pattern": pattern, "version": version})
+    assert first.status_code == 200, first.text
+    new_version = first.json()["version"]
+    assert new_version and new_version != version
+
+    # a second tab still holding the old version must not overwrite the newer file
+    stale = client.put(f"/api/designs/{RIGA}", json={"pattern": pattern, "version": version})
+    assert stale.status_code == 409
+    assert "Reload" in stale.json()["detail"]
+
+    ok = client.put(f"/api/designs/{RIGA}", json={"pattern": pattern, "version": new_version})
+    assert ok.status_code == 200
+
+
+def test_pattern_sheet_escapes_legend_names(client, root):
+    pattern = client.get(f"/api/designs/{RIGA}").json()["pattern"]
+    pattern["legend"][1]["dmc_name"] = "<script>alert(1)</script>"
+    assert client.put(f"/api/designs/{RIGA}", json={"pattern": pattern}).status_code == 200
+    html = client.get(f"/api/designs/{RIGA}/export/sheet").text
+    assert "<script>alert(1)</script>" not in html
+    assert "&lt;script&gt;" in html

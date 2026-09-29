@@ -55,6 +55,8 @@ export interface EditorState {
   /** The Brief (`prompt.md`), the History paragraph printed on the sheet (`history` is undo/redo), and whether `input.png` exists. */
   prompt: string;
   historyText: string;
+  /** design.json version from the last load/save; guards against overwriting a newer file. */
+  version: string | null;
   hasInput: boolean;
   /** Bumped after each upload so `inputUrl(slug) + '?v=' + inputVersion` bypasses the browser cache. */
   inputVersion: number;
@@ -127,6 +129,7 @@ const initial = {
   design: null,
   prompt: '',
   historyText: '',
+  version: null as string | null,
   hasInput: false,
   inputVersion: 0,
   pattern: null,
@@ -198,7 +201,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     try {
       const design = await getDesign(slug);
       if (get().slug !== slug) return; // superseded by a later load
-      set({ design, prompt: design.prompt, historyText: design.history, hasInput: design.has_input, status: { kind: 'idle' } });
+      set({ design, prompt: design.prompt, historyText: design.history, hasInput: design.has_input, version: design.version ?? null, status: { kind: 'idle' } });
       get().setPattern(design.pattern);
     } catch (e) {
       const message = e instanceof ApiError ? String(e.detail) : e instanceof Error ? e.message : String(e);
@@ -318,12 +321,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   },
 
   async save() {
-    const { slug, pattern, saving } = get();
+    const { slug, pattern, saving, version } = get();
     if (!slug || !pattern || saving) return false;
     set({ saving: true });
     try {
-      const saved = await savePattern(slug, pattern);
+      const result = await savePattern(slug, pattern, version);
+      const saved = result.pattern;
       if (get().slug !== slug) return false;
+      set({ version: result.version });
       if (get().pattern === pattern) {
         // nothing changed meanwhile: adopt the canonical copy (else the newer local edits stay, still dirty)
         const { selectedColour, tool, previousTool } = get();

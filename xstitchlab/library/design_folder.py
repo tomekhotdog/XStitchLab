@@ -92,6 +92,11 @@ class DesignFolder:
         return self.path / "input.png"
 
     @property
+    def pattern_version(self) -> str | None:
+        """Opaque version of design.json (its mtime in ns), or None when there is no pattern."""
+        return str(self.pattern_path.stat().st_mtime_ns) if self.pattern_path.is_file() else None
+
+    @property
     def pattern_path(self) -> Path:
         return self.path / "design.json"
 

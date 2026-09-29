@@ -23,6 +23,7 @@ class DesignDetail(BaseModel):
     has_input: bool
     pattern: dict | None
     history: str
+    version: str | None = None  # design.json version; send it back on save
 
 
 class CreateDesign(BaseModel):
@@ -68,6 +69,12 @@ class ApplyResponse(BaseModel):
 
 class SavePattern(BaseModel):
     pattern: dict
+    version: str | None = None  # if given and design.json changed since, the save is refused (409)
+
+
+class SaveResponse(BaseModel):
+    pattern: dict
+    version: str | None
 
 
 class OpSchema(BaseModel):
