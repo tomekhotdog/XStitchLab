@@ -76,7 +76,6 @@ input { padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; bac
 .pattern-canvas-wrap { flex: 1; min-height: 0; position: relative; overflow: hidden; background: #ecebe7; }
 .pattern-canvas { display: block; touch-action: none; cursor: crosshair; }
 .pattern-canvas-wrap[data-panning] .pattern-canvas { cursor: grab; }
-.empty h2 { text-transform: none; font-size: 16px; color: var(--ink); }
 
 /* Palette */
 .legend-list { list-style: none; margin: 0; padding: 0; }
@@ -205,3 +204,48 @@ button.primary { background: var(--accent); color: #fff; border-color: var(--acc
 .shortcuts-table { border-collapse: collapse; width: 100%; margin-bottom: 12px; font-size: 13px; }
 .shortcuts-table td { padding: 3px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .shortcuts-table td:first-child { white-space: nowrap; }
+
+/* Task 12: tabs, brief, drop zone, export menu, empty state (Task 13 restyles) */
+.tabs { display: flex; flex-direction: column; gap: 12px; }
+.tab-list { display: flex; gap: 2px; border-bottom: 1px solid var(--line); }
+.tab { border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); padding: 6px 10px; margin-bottom: -1px; }
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.tab-panel { min-width: 0; }
+textarea { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); width: 100%; resize: vertical; line-height: 1.4; }
+.brief { display: flex; flex-direction: column; gap: 20px; }
+.brief-section { display: flex; flex-direction: column; gap: 6px; }
+.brief-section > p { margin: 0; }
+.brief-section h2 label { cursor: pointer; }
+.brief-text { font-size: 12px; }
+.brief-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.brief-actions .primary { margin-left: auto; }
+.input-preview { margin: 0; }
+.input-preview img { display: block; max-width: 100%; max-height: 240px; border: 1px solid var(--line); border-radius: 6px; background: #ecebe7; }
+.input-preview figcaption { margin-top: 4px; }
+.hint-next { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding: 8px 10px; border-radius: 6px; background: #f6f1e7; }
+.dropzone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 20px 12px; text-align: center;
+  border: 2px dashed var(--line); border-radius: 8px; background: var(--bg); cursor: pointer; color: var(--ink);
+}
+.dropzone:hover, .dropzone:focus-visible { border-color: var(--accent); outline: none; }
+.dropzone.active { border-color: var(--accent); background: #fbe9e3; }
+.dropzone.compact { flex-direction: row; padding: 8px 12px; gap: 8px; }
+.dropzone[aria-disabled="true"] { opacity: 0.5; cursor: default; }
+.field-message { display: block; margin-top: 2px; }
+.new-design-field { display: flex; flex-direction: column; }
+.export-menu-root { position: relative; }
+.export-menu {
+  position: absolute; z-index: 20; right: 0; top: 100%; margin-top: 4px; width: 240px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); padding: 6px;
+}
+.export-item { display: block; padding: 5px 8px; border-radius: 4px; color: var(--ink); }
+.export-item:hover { background: var(--bg); }
+.export-item[aria-disabled="true"] { opacity: 0.5; cursor: default; }
+.export-note { margin: 6px 6px 2px; line-height: 1.3; }
+.empty-state { max-width: 420px; display: flex; flex-direction: column; gap: 14px; padding: 24px; }
+.empty-state h2 { text-transform: none; font-size: 16px; color: var(--ink); margin: 0; }
+.empty-steps { text-align: left; margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.empty-steps .done { color: var(--muted); text-decoration: line-through; }
+.empty-actions { display: flex; justify-content: center; gap: 8px; }
+.empty-state .input-preview img { max-height: 160px; margin: 0 auto; }

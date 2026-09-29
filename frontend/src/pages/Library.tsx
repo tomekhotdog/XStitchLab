@@ -65,42 +65,59 @@ function DesignCard({ design: d }: { design: DesignSummary }) {
   );
 }
 
+export const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
+
+/** Why `slug` is not a valid design slug, or null; empty is "not yet typed", not an error. */
+export function slugProblem(slug: string): string | null {
+  if (slug === '' || SLUG_RE.test(slug)) return null;
+  return 'Use lowercase letters, digits and hyphens, starting with a letter or digit, e.g. 27-holstentor-lubeck';
+}
+
 function NewDesignForm() {
   const navigate = useNavigate();
   const [slug, setSlug] = useState('');
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const problem = slugProblem(slug);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (problem || !slug || !title.trim()) return;
     setBusy(true);
     setError(null);
     try {
-      const d = await createDesign(slug.trim(), title.trim());
-      navigate(`/d/${d.slug}`);
+      const d = await createDesign(slug, title.trim());
+      navigate(`/d/${d.slug}?panel=brief`);
     } catch (err) {
-      setError(errorText(err));
+      setError(err instanceof ApiError && err.status === 409 ? `A design called "${slug}" already exists.` : errorText(err));
       setBusy(false);
     }
   };
 
   return (
-    <form className="new-design" onSubmit={submit}>
+    <form className="new-design" onSubmit={submit} noValidate>
       <strong>New design</strong>
-      <input
-        placeholder="slug, e.g. 27-holstentor-lubeck"
-        value={slug}
-        onChange={(e) => setSlug(e.target.value)}
-        required
-        pattern="[a-z0-9][a-z0-9-]*"
-        title="lowercase letters, digits and hyphens"
-      />
-      <input placeholder="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-      <button type="submit" disabled={busy || !slug.trim() || !title.trim()}>
+      <span className="new-design-field">
+        <input
+          placeholder="slug, e.g. 27-holstentor-lubeck"
+          aria-label="Slug"
+          value={slug}
+          onChange={(e) => {
+            setSlug(e.target.value.trim());
+            setError(null);
+          }}
+          required
+          aria-invalid={problem ? true : undefined}
+          aria-describedby={problem ? 'slug-problem' : undefined}
+        />
+        {problem && <span id="slug-problem" className="error small field-message">{problem}</span>}
+      </span>
+      <input placeholder="title" aria-label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+      <button type="submit" disabled={busy || !slug || Boolean(problem) || !title.trim()}>
         {busy ? 'Creating…' : 'Create'}
       </button>
-      {error && <span className="error">{error}</span>}
+      {error && <span className="error" role="alert">{error}</span>}
     </form>
   );
 }

@@ -6,7 +6,8 @@
 
 import { create } from 'zustand';
 import {
-  ApiError, applyOp as applyOpApi, defaultRecipes, getDesign, listOps, runRecipe as runRecipeApi, savePattern,
+  ApiError, applyOp as applyOpApi, defaultRecipes, getDesign, listOps, runRecipe as runRecipeApi,
+  saveHistory as saveHistoryApi, savePattern, savePrompt as savePromptApi, uploadInput as uploadInputApi,
 } from '@/api/client';
 import type { DesignDetail, JsonSchema, OpCall, OpKind, OpSchema, Pattern, Segment, Step } from '@/api/types';
 import { applyChanges, invertChanges, type Change, type Rect } from '@/model/grid';
@@ -14,6 +15,9 @@ import { dedupe, segKey } from '@/model/segments';
 import { useToast } from './toast';
 
 export type Tool = 'paint' | 'fill' | 'select' | 'eyedropper' | 'backstitch';
+
+/** Which left-column tab is showing; kept across designs so `?panel=` survives the load. */
+export type Panel = 'brief' | 'recipe';
 
 /**
  * One undoable edit. Cell/backstitch deltas come from a tool stroke; `replace` is a whole-pattern
@@ -48,6 +52,13 @@ export interface RunError {
 export interface EditorState {
   slug: string | null;
   design: DesignDetail | null;
+  /** The Brief (`prompt.md`), the History paragraph printed on the sheet (`history` is undo/redo), and whether `input.png` exists. */
+  prompt: string;
+  historyText: string;
+  hasInput: boolean;
+  /** Bumped after each upload so `inputUrl(slug) + '?v=' + inputVersion` bypasses the browser cache. */
+  inputVersion: number;
+  panel: Panel;
   pattern: Pattern | null;
   recipe: OpCall[];
   steps: Step[];
@@ -91,6 +102,13 @@ export interface EditorState {
   applyOp(op: string, params?: Record<string, unknown>): Promise<boolean>;
   /** `PUT /designs/{slug}`; adopts the canonical pattern and clears `dirty`; false (with a toast) on failure. */
   save(): Promise<boolean>;
+  /** `PUT .../prompt`; adopts the saved text; false (with a toast) on failure. */
+  savePrompt(text: string): Promise<boolean>;
+  /** `PUT .../history`; adopts the saved text; false (with a toast) on failure. */
+  saveHistory(text: string): Promise<boolean>;
+  /** `PUT .../input`; sets `hasInput` and bumps `inputVersion`; false (with a toast) on failure. */
+  uploadInput(file: File | Blob): Promise<boolean>;
+  setPanel(panel: Panel): void;
 
   loadOps(): Promise<void>;
   setRecipe(recipe: OpCall[]): void;
@@ -107,6 +125,10 @@ export interface EditorState {
 const initial = {
   slug: null,
   design: null,
+  prompt: '',
+  historyText: '',
+  hasInput: false,
+  inputVersion: 0,
   pattern: null,
   recipe: [] as OpCall[],
   steps: [] as Step[],
@@ -169,13 +191,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   ...initial,
   opSchemas: [],
   defaults: {},
+  panel: 'recipe',
 
   async load(slug) {
     set({ ...initial, slug, status: { kind: 'loading' } });
     try {
       const design = await getDesign(slug);
       if (get().slug !== slug) return; // superseded by a later load
-      set({ design, status: { kind: 'idle' } });
+      set({ design, prompt: design.prompt, historyText: design.history, hasInput: design.has_input, status: { kind: 'idle' } });
       get().setPattern(design.pattern);
     } catch (e) {
       const message = e instanceof ApiError ? String(e.detail) : e instanceof Error ? e.message : String(e);
@@ -316,6 +339,53 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       set({ saving: false });
     }
   },
+
+  async savePrompt(text) {
+    const { slug } = get();
+    if (!slug) return false;
+    try {
+      const saved = await savePromptApi(slug, text);
+      if (get().slug !== slug) return false;
+      set({ prompt: saved.text });
+      useToast.getState().show('Brief saved');
+      return true;
+    } catch (e) {
+      useToast.getState().show(errorMessage(e));
+      return false;
+    }
+  },
+
+  async saveHistory(text) {
+    const { slug } = get();
+    if (!slug) return false;
+    try {
+      const saved = await saveHistoryApi(slug, text);
+      if (get().slug !== slug) return false;
+      set({ historyText: saved.text });
+      useToast.getState().show('History saved');
+      return true;
+    } catch (e) {
+      useToast.getState().show(errorMessage(e));
+      return false;
+    }
+  },
+
+  async uploadInput(file) {
+    const { slug } = get();
+    if (!slug) return false;
+    try {
+      await uploadInputApi(slug, file);
+      if (get().slug !== slug) return false;
+      set({ hasInput: true, inputVersion: get().inputVersion + 1 });
+      useToast.getState().show('Input saved');
+      return true;
+    } catch (e) {
+      useToast.getState().show(errorMessage(e));
+      return false;
+    }
+  },
+
+  setPanel: (panel) => set({ panel }),
 
   async loadOps() {
     if (get().opSchemas.length > 0) return;

@@ -24,6 +24,7 @@ export function RecipePanel() {
   const defaults = useEditorStore((s) => s.defaults);
   const recipe = useEditorStore((s) => s.recipe);
   const design = useEditorStore((s) => s.design);
+  const hasInput = useEditorStore((s) => s.hasInput);
   const dirty = useEditorStore((s) => s.dirty);
   const running = useEditorStore((s) => s.running);
   const runError = useEditorStore((s) => s.runError);
@@ -37,7 +38,6 @@ export function RecipePanel() {
     loadOps().catch((e: unknown) => setOpsError(e instanceof Error ? e.message : String(e)));
   }, [loadOps]);
 
-  const hasInput = design?.has_input ?? false;
   const recipeJson = JSON.stringify(recipe);
   const activeStart = STARTS.find((s) => defaults[s.name] && JSON.stringify(defaults[s.name]) === recipeJson)?.name;
 
@@ -105,7 +105,7 @@ export function RecipePanel() {
       <AddOpMenu />
 
       <div className="recipe-run">
-        <button type="button" className="primary" disabled={running || !hasInput || recipe.length === 0} onClick={onRun}>
+        <button type="button" className="primary" data-testid="run" disabled={running || !hasInput || recipe.length === 0} onClick={onRun}>
           {running ? 'Running…' : 'Run recipe'}
         </button>
         {!hasInput && design && <span className="muted small">Add an input image first</span>}
