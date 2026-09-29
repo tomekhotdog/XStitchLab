@@ -571,8 +571,10 @@ Commit: `feat(backend): design library, ops schemas, recipe run and apply, expor
 
 ---
 
-### Task 9: Frontend scaffold — React + TypeScript, API client, Library page, read-only Editor canvas
+### Task 9: Frontend scaffold — React + TypeScript, API client, Library page, read-only Editor canvas ✅ DONE (2fcf4a7)
 **Depends on:** Task 8
+
+> Outcome: 52 vitest tests pass; `npm run build` passes; the editor renders Riga with backstitch (verified with Chrome `--headless=new`; the old headless mode leaves the canvas blank, which is a renderer artifact, not a bug). Spec review was done directly by the orchestrator (types, client routes, thread constants, segment merge, store undo path, renderer constants all match) because review agents stalled under machine load. The old app's deletions were swept into commit abc0189.
 
 **Files:**
 - Delete: `frontend/src/main.js`, `frontend/src/editor/`, `frontend/src/state/`, `frontend/src/api/client.js`, `frontend/styles/`, old `frontend/index.html` content
