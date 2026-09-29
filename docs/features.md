@@ -1,10 +1,10 @@
 # Features
 
-Terms in bold are defined in `docs/language.md`. Items marked *(new)* are introduced by the 2026-09-26 recipe/editor iteration; everything else exists today and is kept.
+Terms in bold are defined in `docs/language.md`.
 
 ## Library
 
-### Browse and open Designs *(new)*
+### Browse and open Designs
 
 See every **Design** in `designs/`, with thumbnail, title, and whether it has an **Input** and a **Pattern**. Open one into the editor.
 
@@ -13,7 +13,7 @@ See every **Design** in `designs/`, with thumbnail, title, and whether it has an
 - `GET /api/designs/{slug}` — open
 - `Library` page
 
-### Create a Design *(new)*
+### Create a Design
 
 Start a new **DesignFolder** from a slug and title.
 
@@ -22,7 +22,7 @@ Start a new **DesignFolder** from a slug and title.
 
 ## Brief
 
-### Write the Brief and attach the Input *(new)*
+### Write the Brief and attach the Input
 
 Write `prompt.md` from the Hanseatic prompt template inside the app, copy it to an external image generator, and drop the generated PNG into the Design as `input.png`.
 
@@ -33,7 +33,7 @@ Write `prompt.md` from the Hanseatic prompt template inside the app, copy it to 
 
 ## Build
 
-### Run a Recipe with step previews *(new)*
+### Run a Recipe with step previews
 
 Pick a default **Recipe** (`predesigned` or `photo`) or edit one, then **Run** it on the Input and see a preview for every **Step**.
 
@@ -42,7 +42,7 @@ Pick a default **Recipe** (`predesigned` or `photo`) or edit one, then **Run** i
 - `xstitch run <design_dir>`
 - `RecipePanel`, `StepStrip` components
 
-### Tune Operations from their schemas *(new)*
+### Tune Operations from their schemas
 
 Every **Operation** appears as a card with controls generated from its parameter schema. Add, remove, reorder, and adjust Operations.
 
@@ -64,7 +64,7 @@ Remove isolated stitches, absorb small regions, smooth, straighten edges, fill h
 **API surface:**
 - Operations `remove_isolated`, `absorb_small_regions`, `smooth`, `straighten_edges`, `fill_holes`, `snap_diagonals`, `connect_lines`, `rectangularize`, `regularize_repeats`, `merge_similar_colours`
 
-### Apply the mechanical kit edits *(new)*
+### Apply the mechanical kit edits
 
 Turn the sky into **Fabric**, **Substitute** a DMC code, **Merge** one colour into another, crop or pad the canvas to the kit grid, and convert a drawn outline colour into **Backstitch**.
 
@@ -76,12 +76,12 @@ Turn the sky into **Fabric**, **Substitute** a DMC code, **Merge** one colour in
 
 ### Paint and fill stitches
 
-Paint single cells, drag to paint, and *(new)* flood-fill a contiguous region with the selected colour.
+Paint single cells, drag to paint, and flood-fill a contiguous region with the selected colour.
 
 **API surface:**
 - `Toolbar` tools `paint`, `fill`; store actions `setCells`
 
-### Select, move, and delete regions *(new)*
+### Select, move, and delete regions
 
 Drag a rectangle, then move it, delete it to Fabric, or fill it.
 
@@ -90,14 +90,14 @@ Drag a rectangle, then move it, delete it to Fabric, or fill it.
 
 ### Pick colours and manage the palette
 
-Choose a colour from the **Legend**, *(new)* pick one from the canvas with the eyedropper, and from the palette replace, merge, or set a colour as Fabric.
+Choose a colour from the **Legend**, pick one from the canvas with the eyedropper, and from the palette replace, merge, or set a colour as Fabric.
 
 **API surface:**
 - `PalettePanel` component; `POST /api/ops/apply` for replace, merge, fabric
 
 ### Draw Backstitch
 
-Toggle unit segments along cell edges, *(new)* drag to draw runs. View in colour, symbol, or backstitch mode.
+Toggle unit segments along cell edges, drag to draw runs. View in colour, symbol, or backstitch mode.
 
 **API surface:**
 - `Toolbar` tool `backstitch`; `LayeredRenderer` backstitch layer
@@ -111,14 +111,14 @@ Every edit is reversible, including Operations applied from the palette.
 
 ### Navigate the canvas
 
-Zoom with wheel or keys, pan, *(new)* zoom to fit, keyboard cursor painting.
+Zoom with wheel or keys, pan, zoom to fit, keyboard cursor painting.
 
 **API surface:**
 - `PatternCanvas` component
 
 ## Save and Export
 
-### Save the Design *(new: saves to the folder)*
+### Save the Design
 
 Write `design.json` (with the Recipe) and regenerate `design.md` in the DesignFolder.
 
@@ -151,14 +151,14 @@ Per-colour stitch counts, metres, skeins, and 60 cm sections per **Kit**.
 
 ## Quality
 
-### Benchmark Recipes against finished Designs *(new)*
+### Benchmark Recipes against finished Designs
 
 Score each committed Design's Recipe against its final grid and fail the tests when a change regresses it.
 
 **API surface:**
 - `tools/benchmark.py`, `xstitch benchmark`, `tests/test_benchmark.py`
 
-## Removed in this iteration
+## Removed in the recipe/editor iteration (2026-09)
 
 - In-app DALL-E generation (`xstitch generate`) — never used for production designs.
 - Upload-and-download editing with an in-memory pattern store.

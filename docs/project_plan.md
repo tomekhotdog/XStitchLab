@@ -1,3 +1,7 @@
+> **Historical.** The original project plan. Superseded by the recipe editor: the DALL-E
+> generator (`ai_generator.py`) and `thread_calc.py` no longer exist. See `README.md`,
+> `docs/features.md` and `docs/spec.md` for the current product.
+
  # XStitchLab Technical Pipeline - Project Plan         
                                                          
   ## Overview                                            

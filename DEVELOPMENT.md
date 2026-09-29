@@ -8,6 +8,7 @@ either; `uv` uses the symlink transparently.
 
 ```bash
 uv sync --all-packages   # installs xstitchlab, the backend (a uv workspace member), and dev deps
+cd frontend && npm install
 ```
 
 ## Quick Start
@@ -77,6 +78,23 @@ uv run pytest backend/tests -q                             # backend only (TestC
 The backend tests seed a temporary library with `designs/01-three-brothers-riga`
 and override the root dependency, so they never touch `designs/`.
 
+### Frontend
+
+```bash
+cd frontend
+npm run dev        # Vite dev server on :5173 (proxies /api to BACKEND_PORT, default 8000)
+npm test           # Vitest unit tests (jsdom), once
+npm run test:watch # Vitest in watch mode
+npm run build      # type-check (tsc --noEmit) + production build
+npm run e2e        # Playwright smoke test (Chromium)
+```
+
+`npm run e2e` starts its own servers — the backend on :8001 and Vite on :5174 — so it runs
+alongside `./run-dev.sh`. `e2e/global-setup.ts` copies `designs/01-three-brothers-riga` into
+`frontend/e2e/.tmp-designs/` (git-ignored, wiped each run) and the backend serves that via
+`XSTITCH_DESIGNS_DIR`, so the test's save never touches `designs/`. Playwright's Chromium lives in
+`~/Library/Caches/ms-playwright`; after bumping `@playwright/test`, run `npx playwright install chromium`.
+
 ## Troubleshooting
 
 ### Port Already in Use
@@ -85,7 +103,7 @@ and override the root dependency, so they never touch `designs/`.
 lsof -ti:8000 | xargs kill -9  # Backend
 lsof -ti:5173 | xargs kill -9  # Frontend
 
-# Or kill by process name
-pkill -f "uvicorn"
+# Or kill by process name (also stops any other uvicorn/vite, e.g. a running e2e test)
+pkill -f "uvicorn backend.app.main:app"
 pkill -f "vite"
 ```

@@ -6,94 +6,88 @@ A cross-stitch pattern design tool with an end-to-end pipeline: from image to st
 
 ## What it does
 
-**Image &rarr; Pixelation &rarr; Color mapping &rarr; Pattern &rarr; Thread estimation**
+XStitchLab turns a picture into a stitchable cross-stitch kit. Each design lives in its own folder
+under `designs/` (source image, brief, recipe, pattern). A **recipe** is an ordered list of
+operations — quantize the image, pixelate it onto a stitch grid, clean up stray stitches, generate
+backstitch — that you can tweak and re-run, previewing every step. The result is a pattern mapped
+to real DMC thread colours that you finish by hand in the browser editor and export as a printable
+pattern sheet, PDF, PNG previews or JSON, with thread quantities per colour.
 
-Take any image — or generate one with AI — and turn it into a cross-stitch pattern with real DMC thread colours, stitch counts, and printable instructions.
+### Workflow
 
-### Features
+**Brief &rarr; Recipe &rarr; Edit &rarr; Export**
 
-- **Image processing**: Resize to stitch grid, colour quantization (k-means), dithering control
-- **DMC colour mapping**: Perceptual colour matching using CIELAB &Delta;E against the full DMC palette (~500 colours)
-- **Interactive editor**: Browser-based pattern editor with real-time preview, backstitch editing, colour adjustments
-- **Pattern output**: Symbol grids, colour legends, stitch counts per colour
-- **Thread estimation**: Calculate thread requirements by colour, with fabric count and wastage factors
-- **Multiple exports**: PNG previews (colour block, symbol grid, stitch render), printable PDF patterns, JSON data
-- **AI generation**: Generate source images from text prompts via DALL-E 3
-
-## Architecture
-
-The project has three components:
-
-- **`xstitchlab/`** — Core Python package: image processing, pixelation, DMC mapping, thread calculation, pattern export
-- **`backend/`** — Flask API server exposing the pipeline as REST endpoints
-- **`frontend/`** — React/Vite browser-based pattern editor with interactive controls
-
-```
-xstitchlab/
-├── core/
-│   ├── image_input.py        # Load/validate images
-│   ├── ai_generator.py       # OpenAI DALL-E integration
-│   ├── pixelator.py          # Resize + quantize
-│   ├── color_mapper.py       # RGB → DMC mapping (CIELAB)
-│   ├── pattern.py            # Pattern data structure
-│   ├── thread_calc.py        # Thread estimation
-│   └── visualizer.py         # Render previews
-├── export/
-│   ├── pdf_exporter.py       # Printable PDF patterns
-│   └── png_exporter.py       # Image export
-└── data/
-    └── dmc_colors.json       # DMC thread database (~500 colours)
-```
+1. **Brief** — describe the design and attach the source image (`prompt.md`, `input.png`).
+2. **Recipe** — build the op list, run it, and step through the preview of each op.
+3. **Edit** — paint, fill, select and backstitch on the pattern canvas; undo/redo; save.
+4. **Export** — pattern sheet (HTML), PDF, colour/symbol/realistic PNGs, canonical JSON.
 
 ## Getting started
 
 ### Prerequisites
 
-- Python 3.11+
-- [uv](https://github.com/astral-sh/uv) (recommended) or pip
+- Python 3.11+ and [uv](https://github.com/astral-sh/uv)
 - Node.js 18+ (for the frontend)
 
-### Installation
+### Quick start
 
 ```bash
 git clone https://github.com/tomekhotdog/XStitchLab.git
 cd XStitchLab
 
-# Backend
-uv sync
+uv sync --all-packages          # core package + backend (uv workspace)
+cd frontend && npm install && cd ..
 
-# Frontend
-cd frontend && npm install
+./run-dev.sh                    # backend on :8000, frontend on :5173
 ```
 
-### Running
+Open http://localhost:5173. API docs are at http://localhost:8000/docs.
+`./run-backend.sh` and `./run-frontend.sh` start the servers individually; logs go to `logs/`.
+
+### CLI
 
 ```bash
-# Start both backend and frontend
-./run-dev.sh
-
-# Or individually
-./run-backend.sh
-./run-frontend.sh
+uv run xstitch run designs/<slug>                  # run the design's recipe over its input.png
+uv run xstitch export designs/<slug> --kind sheet  # sheet | pdf | png-color | png-symbol | png-realistic | json
+uv run xstitch benchmark                           # score every design's recipe against its committed pattern
 ```
 
-### CLI usage
-
-```bash
-# Convert an image to a cross-stitch pattern
-uv run xstitch convert image.png --size 40 --colors 8
-
-# Generate pattern with AI (requires OPENAI_API_KEY)
-uv run xstitch generate "medieval building facade" --style architecture
-
-# Estimate thread requirements
-uv run xstitch estimate pattern.json --fabric 14
-```
+`uv run xstitch --help` lists the rest (`convert`, `estimate`, `palette`, ...).
 
 ## Tests
 
 ```bash
-uv run pytest tests/
+uv run pytest                                  # Python: core, ops, library, backend
+cd frontend && npm test && npm run e2e         # Vitest unit tests, then the Playwright smoke test
+```
+
+The e2e test starts its own backend (port 8001) and frontend (port 5174) against a throwaway copy
+of one design, so it never touches `designs/` or a running dev session.
+
+## Project structure
+
+```
+xstitchlab/              Core Python package
+├── core/                Pattern model, image input, pixelation, DMC colour mapping, backstitch
+├── ops/                 Recipe operations (one module per op) and the op registry
+├── library/             Design folders: design.json / design.md / exports
+├── export/              Pattern sheet, PDF, PNG and thread-quantity exports
+├── prompts/             Brief/prompt templates
+└── cli.py               `xstitch` command
+backend/app/             FastAPI app (routes/designs.py, routes/ops.py) over the library and ops
+frontend/src/
+├── api/                 Typed API client
+├── model/               Grid, segments and thread maths
+├── store/               Zustand editor store (recipe, pattern, undo/redo, save)
+├── canvas/              Layered pattern canvas and editing tools
+├── components/          Panels, toolbar, recipe cards, dialogs
+├── pages/               Library and Editor
+├── hooks/               Keyboard shortcuts
+└── styles/
+frontend/e2e/            Playwright smoke test
+tools/benchmark.py       Recipe-vs-final-pattern benchmark
+designs/<slug>/          One folder per design: input.png, prompt.md, design.json, design.md, exports
+website/                 Static marketing site
 ```
 
 ## Background
