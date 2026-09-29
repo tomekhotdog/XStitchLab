@@ -614,8 +614,10 @@ Commit: `feat(frontend): schema-driven recipe panel with run and step previews`.
 
 ---
 
-### Task 11: Editing tools, undo, keyboard, palette actions, save
+### Task 11: Editing tools, undo, keyboard, palette actions, save ✅ DONE (458b14c)
 **Depends on:** Task 10
+
+> Outcome: 129 vitest tests pass; tsc and build clean; editor screenshot verified (tool rail, Save, help, palette menus). `GET /api/dmc` already existed. Save clears undo history (store contract). Interaction (painting, saving) is covered by unit tests and will get a Playwright pass in Task 14.
 
 **Files:**
 - Create: `frontend/src/components/Toolbar.tsx`, `frontend/src/canvas/tools/{paint,fill,select,eyedropper,backstitch}.ts` (each tool: `onDown/onMove/onUp(ev, ctx)` producing `HistoryPatch`es), `frontend/src/components/PaletteMenu.tsx` (context menu on a swatch: Replace with DMC… (searchable list from `data/dmc_colors.json` served at `GET /api/dmc`), Merge into…, Set as fabric), `frontend/src/components/SaveButton.tsx`, `frontend/src/components/ConfirmDialog.tsx`, `frontend/src/hooks/useShortcuts.ts`
