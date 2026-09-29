@@ -1,0 +1,74 @@
+/* Design tokens: "workshop" theme. Aida cream ground, DMC-derived accents. Components use tokens only. */
+
+:root {
+  color-scheme: light;
+  --ground: #f6f1e7;
+  --paper: #fffdf8;
+  --ink: #2b211a;
+  --ink-soft: #6e6258;
+  --rule: #e3dacb;
+  --accent: #b95544;
+  --accent-ink: #ffffff;
+  --accent-wash: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  --sage: #7d8a62;
+  --warn: #b9973f;
+  --danger: #a83a2a;
+  --danger-wash: color-mix(in srgb, var(--danger) 10%, var(--paper));
+  --hover: color-mix(in srgb, var(--ink) 6%, transparent);
+  --canvas-bg: #efe8da;
+  --canvas-dot: color-mix(in srgb, var(--ink) 10%, transparent);
+  --canvas-fabric: #f6f1e7;
+  --backdrop: rgba(43, 33, 26, 0.4);
+
+  --font-display: "Bricolage Grotesque", "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --shadow: 0 1px 2px rgba(43, 33, 26, 0.06), 0 4px 12px rgba(43, 33, 26, 0.06);
+  --shadow-pop: 0 2px 4px rgba(43, 33, 26, 0.08), 0 12px 32px rgba(43, 33, 26, 0.14);
+  --ease: 140ms ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #1c1916;
+    --paper: #25211d;
+    --ink: #f2ebe1;
+    --ink-soft: #b5a999;
+    --rule: #3a342d;
+    --accent: #e0846f;
+    --accent-ink: #1c1916;
+    --sage: #b3c092;
+    --canvas-bg: #2a2622;
+    --canvas-fabric: #3a352f;
+    --backdrop: rgba(0, 0, 0, 0.55);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.25);
+    --shadow-pop: 0 2px 4px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #1c1916;
+  --paper: #25211d;
+  --ink: #f2ebe1;
+  --ink-soft: #b5a999;
+  --rule: #3a342d;
+  --accent: #e0846f;
+  --accent-ink: #1c1916;
+  --sage: #b3c092;
+  --canvas-bg: #2a2622;
+  --canvas-fabric: #3a352f;
+  --backdrop: rgba(0, 0, 0, 0.55);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-pop: 0 2px 4px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.45);
+}

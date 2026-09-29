@@ -13,7 +13,7 @@ import type { Pattern, Segment } from '@/api/types';
 import type { Cell, Rect } from '@/model/grid';
 import { normalise } from '@/model/segments';
 import { useEditorStore, type ToolOverlay } from '@/store/editorStore';
-import { FABRIC, LayeredRenderer, type View, type ViewMode } from './LayeredRenderer';
+import { fabricColour, LayeredRenderer, type View, type ViewMode } from './LayeredRenderer';
 import { tools } from './tools';
 import type { CanvasTool, ToolContext, ToolEvent } from './tools/types';
 
@@ -49,15 +49,16 @@ export function paintOverlay(
   const move = overlay?.move;
   if (move) {
     const { rect, dx, dy } = move;
+    const fabric = fabricColour();
     ctx.globalAlpha = 0.85;
-    ctx.fillStyle = FABRIC;
+    ctx.fillStyle = fabric;
     ctx.fillRect(rect.x * s, rect.y * s, rect.w * s, rect.h * s);
     for (let y = rect.y; y < rect.y + rect.h; y++) {
       for (let x = rect.x; x < rect.x + rect.w; x++) {
         const entry = pattern.legend[pattern.grid[y]?.[x] ?? -1];
         if (!entry) continue;
         const isBackground = pattern.grid[y][x] === pattern.background_index;
-        ctx.fillStyle = isBackground ? FABRIC : `rgb(${entry.rgb[0]},${entry.rgb[1]},${entry.rgb[2]})`;
+        ctx.fillStyle = isBackground ? fabric : `rgb(${entry.rgb[0]},${entry.rgb[1]},${entry.rgb[2]})`;
         ctx.fillRect((x + dx) * s, (y + dy) * s, s, s);
       }
     }

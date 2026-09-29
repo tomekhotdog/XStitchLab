@@ -88,3 +88,26 @@ describe('humanise', () => {
     expect(humanise('width')).toBe('Width');
   });
 });
+
+describe('ParamField defaults', () => {
+  // A recipe step only stores the params the user changed; an absent key means "the op's
+  // default", so the control must show that value instead of an empty box.
+  it('absent key shows the schema default', () => {
+    render(<ParamField name="n_colors" schema={{ type: 'integer', minimum: 2, maximum: 64, default: 12 }} value={undefined} onChange={() => {}} />);
+    expect(screen.getByRole('spinbutton')).toHaveValue(12);
+    expect(screen.getByRole('slider')).toHaveValue('12');
+  });
+
+  it('optional field with a concrete default: label names it and the disabled control shows it', () => {
+    const schema = { anyOf: [{ type: 'integer', minimum: 1, maximum: 400 }, { type: 'null' }], default: 60 };
+    render(<ParamField name="width" schema={schema} value={undefined} onChange={() => {}} />);
+    expect(screen.getByRole('checkbox', { name: 'use default (60)' })).toBeChecked();
+    expect(screen.getByRole('spinbutton')).toHaveValue(60);
+  });
+
+  it('optional field whose default is null: label reads "use default"', () => {
+    const schema = { anyOf: [{ type: 'integer' }, { type: 'null' }], default: null };
+    render(<ParamField name="height" schema={schema} value={null} onChange={() => {}} />);
+    expect(screen.getByRole('checkbox', { name: 'use default' })).toBeChecked();
+  });
+});

@@ -56,7 +56,13 @@ export function ParamField({ name, schema, value, onChange }: Props) {
   const label = typeof schema.title === 'string' ? schema.title : humanise(name);
   const description = typeof schema.description === 'string' ? schema.description : undefined;
   const isDefault = nullable && (value === null || value === undefined);
-  const shown = isDefault ? (inner.default ?? concreteDefault(inner)) : value;
+  // pydantic puts the field default on the outer schema; inner.default covers hand-written schemas.
+  const declared = schema.default !== undefined ? schema.default : inner.default;
+  const absent = value === undefined;
+  const shown = isDefault
+    ? (declared ?? concreteDefault(inner))
+    : absent && declared !== undefined ? declared : value;
+  const defaultLabel = declared === undefined || declared === null ? 'use default' : `use default (${String(declared)})`;
 
   return (
     <div className="field">
@@ -69,7 +75,7 @@ export function ParamField({ name, schema, value, onChange }: Props) {
               checked={isDefault}
               onChange={(e) => onChange(name, e.target.checked ? null : concreteDefault(inner))}
             />
-            default
+            {defaultLabel}
           </label>
         )}
       </div>

@@ -22,22 +22,26 @@ export function Library() {
   return (
     <div className="library">
       <header className="library-header">
-        <h1>XStitchLab</h1>
+        <h1>
+          <span className="x">X</span>StitchLab
+        </h1>
         <p className="muted">Design library</p>
       </header>
-      <NewDesignForm />
       {error && <p className="error">Could not load designs: {error}</p>}
       {!error && designs === null && <p className="muted">Loading…</p>}
       {designs && designs.length === 0 && <p className="muted">No designs yet.</p>}
-      {designs && (
-        <ul className="card-grid">
-          {designs.map((d) => (
-            <li key={d.slug}>
-              <DesignCard design={d} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className="card-grid">
+        {(designs ?? []).map((d) => (
+          <li key={d.slug}>
+            <DesignCard design={d} />
+          </li>
+        ))}
+        <li>
+          <div className="card card-new">
+            <NewDesignForm />
+          </div>
+        </li>
+      </ul>
     </div>
   );
 }
@@ -52,7 +56,7 @@ function DesignCard({ design: d }: { design: DesignSummary }) {
         <h2>{d.title}</h2>
         <p className="mono muted">{d.slug}</p>
         {d.has_pattern && (
-          <p className="muted">
+          <p className="card-meta">
             {d.width}×{d.height} · {d.colors} colours · {d.stitches} stitches
           </p>
         )}

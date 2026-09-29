@@ -36,11 +36,15 @@ export function OpCard({ index, call, schema, count, error }: Props) {
         >
           {collapsed ? '▸' : '▾'}
         </button>
-        <span className="op-title">
-          <span className="mono muted op-index">{index + 1}</span> {schema?.title ?? call.op}
-        </span>
-        {schema && <span className="badge">{schema.group}</span>}
-        <span className="badge">{kind}</span>
+        <div className="op-heading">
+          <span className="op-title">
+            <span className="mono muted op-index">{index + 1}</span> {schema?.title ?? call.op}
+          </span>
+          <span className="op-badges">
+            {schema && <span className="badge">{schema.group}</span>}
+            <span className="badge">{kind}</span>
+          </span>
+        </div>
         <span className="op-actions">
           <button type="button" disabled={index === 0} onClick={() => moveOp(index, index - 1)} title="Move up" aria-label="Move up">↑</button>
           <button type="button" disabled={index >= count - 1} onClick={() => moveOp(index, index + 1)} title="Move down" aria-label="Move down">↓</button>

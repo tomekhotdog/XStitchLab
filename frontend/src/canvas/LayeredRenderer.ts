@@ -21,6 +21,13 @@ export interface View {
 export type OverlayPainter = (ctx: CanvasRenderingContext2D, scale: number, pattern: Pattern) => void;
 
 export const FABRIC = '#f6f1e7';
+
+/** Fabric colour from the `--canvas-fabric` theme token, read at draw time; FABRIC when unset. */
+export function fabricColour(): string {
+  if (typeof document === 'undefined' || typeof getComputedStyle === 'undefined') return FABRIC;
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--canvas-fabric').trim();
+  return v || FABRIC;
+}
 export const SYMBOL_MIN_CSS_PX = 14;
 const MAX_LAYER_PX = 8192;
 const INK = '#1f1b16';
@@ -41,6 +48,7 @@ export class LayeredRenderer {
   /** Device px per cell at the last rasterisation; 0 = nothing rasterised yet. */
   private scale = 0;
   private dpr = 1;
+  private fabric = FABRIC;
   private dirtyCells: Cell[] = [];
   private dirtyRows = new Set<number>();
   private needs = { cells: true, grid: true, backstitch: true, overlay: true };
@@ -182,6 +190,7 @@ export class LayeredRenderer {
 
   private prepareCellCtx(ctx: Ctx2D): void {
     const s = this.scale;
+    this.fabric = fabricColour();
     ctx.font = `${Math.max(1, Math.floor(s * 0.62))}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -204,7 +213,7 @@ export class LayeredRenderer {
     }
     const isBackground = idx === pattern.background_index;
     if (isBackground) {
-      ctx.fillStyle = FABRIC;
+      ctx.fillStyle = this.fabric;
       ctx.fillRect(px, py, pw, ph);
       if (s >= 6) {
         ctx.fillStyle = 'rgba(0,0,0,0.18)';
