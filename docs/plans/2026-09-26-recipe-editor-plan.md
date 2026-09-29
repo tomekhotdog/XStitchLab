@@ -685,6 +685,6 @@ Commit: `chore: e2e smoke, scripts, docs`.
 
 ## Review
 - [x] Code review after Task 8 (done, fixes in abc0189)
-- [ ] Final code review after Task 14
-- [ ] All feedback addressed
-- [ ] Final verification passed (tomek-superpowers:verify)
+- [x] Final code review after Task 14 (verdict: merge after fixes)
+- [x] All feedback addressed (d1e2e2a): stale-save 409 guard via design.json version, escaped legend HTML, README/CLAUDE.md docs, rounding note. Declined by decision: changing the default library away from `designs/` (documented in README instead). Follow-up: fold `backstitch.color_distance` into `color_mapper.color_distance_rgb`.
+- [x] Final verification passed: 310 pytest (incl. benchmark), 163 vitest, tsc clean, 1 Playwright e2e. Branch pushed to origin/recipe-editor.
