@@ -592,8 +592,10 @@ Commit: `feat(frontend): React scaffold, typed API client, library page, layered
 
 ---
 
-### Task 10: Recipe panel with schema-driven cards, run, and step previews
+### Task 10: Recipe panel with schema-driven cards, run, and step previews ✅ DONE
 **Depends on:** Task 9
+
+> Outcome: 76 vitest tests pass; build passes; screenshot verified (cards, controls, run shape). The implementer agent stalled twice under machine load; the orchestrator finished typecheck/test/build/screenshot/commit. For Task 13: OpCard titles truncate in the 280 px column; a param missing from the recipe should display its schema default instead of an empty input; the Run button sits below the fold.
 
 **Files:**
 - Create: `frontend/src/components/RecipePanel.tsx`, `OpCard.tsx`, `ParamField.tsx`, `AddOpMenu.tsx`, `StepStrip.tsx`
