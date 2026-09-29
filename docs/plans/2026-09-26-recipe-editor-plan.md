@@ -633,8 +633,10 @@ Commit: `feat(frontend): editing tools, undo/redo, palette actions, save`.
 
 ---
 
-### Task 12: Brief panel, input upload, exports, and the "New design" flow
+### Task 12: Brief panel, input upload, exports, and the "New design" flow ✅ DONE (d78f811)
 **Depends on:** Task 11
+
+> Outcome: 158 vitest tests pass; build clean. Implementer committed before the watchdog stopped it.
 
 **Files:**
 - Create: `frontend/src/components/BriefPanel.tsx` (prompt textarea with "Insert Hanseatic template" — template text fetched from `GET /api/prompt-template` (add to backend: returns `prompts/templates.py` pixel-art template rendered with a placeholder subject; test), Copy button, drop zone for input.png with preview and "Replace"), `frontend/src/components/ExportMenu.tsx` (buttons for each export kind; opens the returned file in a new tab for HTML/PDF, downloads PNG/JSON), `frontend/src/components/EmptyState.tsx` for a design without input or pattern
