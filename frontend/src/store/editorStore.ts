@@ -1,21 +1,35 @@
 /**
  * Editor state (zustand). Pure setters mutate the Pattern immutably; `undo`/`redo` replay patches
  * through those same setters so every subscriber (canvas, palette, threads) sees the change.
- * Only `load` talks to the API.
+ * `load`, `runRecipe`, `applyOp` and `save` talk to the API.
  */
 
 import { create } from 'zustand';
-import { ApiError, defaultRecipes, getDesign, listOps, runRecipe as runRecipeApi } from '@/api/client';
+import {
+  ApiError, applyOp as applyOpApi, defaultRecipes, getDesign, listOps, runRecipe as runRecipeApi, savePattern,
+} from '@/api/client';
 import type { DesignDetail, JsonSchema, OpCall, OpKind, OpSchema, Pattern, Segment, Step } from '@/api/types';
 import { applyChanges, invertChanges, type Change, type Rect } from '@/model/grid';
 import { dedupe, segKey } from '@/model/segments';
+import { useToast } from './toast';
 
 export type Tool = 'paint' | 'fill' | 'select' | 'eyedropper' | 'backstitch';
 
-export interface Patch {
+/**
+ * One undoable edit. Cell/backstitch deltas come from a tool stroke; `replace` is a whole-pattern
+ * swap (an Operation applied through the API) and takes precedence when present.
+ */
+export interface HistoryPatch {
   cells: Change[];
   backstitchAdd: Segment[];
   backstitchRemove: Segment[];
+  replace?: { before: Pattern; after: Pattern };
+}
+
+/** Transient tool feedback drawn on the canvas overlay: a marquee being dragged or a selection being moved. */
+export interface ToolOverlay {
+  marquee?: Rect;
+  move?: { rect: Rect; dx: number; dy: number };
 }
 
 export interface Status {
@@ -40,9 +54,13 @@ export interface EditorState {
   previewStep: number | null;
   selectedColour: number;
   tool: Tool;
+  /** The tool active before the current one; the eyedropper returns to it. */
+  previousTool: Tool;
   selection: Rect | null;
+  overlay: ToolOverlay | null;
   dirty: boolean;
-  history: { undo: Patch[]; redo: Patch[] };
+  saving: boolean;
+  history: { undo: HistoryPatch[]; redo: HistoryPatch[] };
   status: Status;
   /** Op catalogue and default recipes; fetched once, kept across designs. */
   opSchemas: OpSchema[];
@@ -54,10 +72,12 @@ export interface EditorState {
   reset(): void;
   /** Adopt a freshly loaded / run / saved pattern: clears history and `dirty`. */
   setPattern(pattern: Pattern | null): void;
+  /** Swap the whole pattern as an edit (history kept, `dirty` set); used by `applyOp` and undo/redo of it. */
+  replacePattern(pattern: Pattern): void;
   setCells(changes: Change[]): void;
   setBackstitch(add: Segment[], remove: Segment[]): void;
   setBackground(index: number | null): void;
-  pushPatch(patch: Patch): void;
+  pushPatch(patch: HistoryPatch): void;
   undo(): void;
   redo(): void;
   canUndo(): boolean;
@@ -65,7 +85,12 @@ export interface EditorState {
   setSelectedColour(index: number): void;
   setTool(tool: Tool): void;
   setSelection(rect: Rect | null): void;
+  setOverlay(overlay: ToolOverlay | null): void;
   setPreviewStep(index: number | null): void;
+  /** Apply one Operation to the current pattern through the API as an undoable edit; false (with a toast) on failure. */
+  applyOp(op: string, params?: Record<string, unknown>): Promise<boolean>;
+  /** `PUT /designs/{slug}`; adopts the canonical pattern and clears `dirty`; false (with a toast) on failure. */
+  save(): Promise<boolean>;
 
   loadOps(): Promise<void>;
   setRecipe(recipe: OpCall[]): void;
@@ -88,9 +113,12 @@ const initial = {
   previewStep: null,
   selectedColour: 0,
   tool: 'paint' as Tool,
+  previousTool: 'paint' as Tool,
   selection: null,
+  overlay: null,
   dirty: false,
-  history: { undo: [] as Patch[], redo: [] as Patch[] },
+  saving: false,
+  history: { undo: [] as HistoryPatch[], redo: [] as HistoryPatch[] },
   status: { kind: 'idle' } as Status,
   running: false,
   runError: null as RunError | null,
@@ -166,8 +194,19 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       dirty: false,
       history: { undo: [], redo: [] },
       selection: null,
+      overlay: null,
       previewStep: null,
       selectedColour: 0,
+    });
+  },
+
+  replacePattern(pattern) {
+    set({
+      pattern,
+      dirty: true,
+      selection: null,
+      overlay: null,
+      selectedColour: Math.min(get().selectedColour, Math.max(0, pattern.legend.length - 1)),
     });
   },
 
@@ -203,8 +242,12 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     const { history } = get();
     const patch = history.undo[history.undo.length - 1];
     if (!patch) return;
-    get().setCells(invertChanges(patch.cells));
-    get().setBackstitch(patch.backstitchRemove, patch.backstitchAdd);
+    if (patch.replace) {
+      get().replacePattern(patch.replace.before);
+    } else {
+      get().setCells(invertChanges(patch.cells));
+      get().setBackstitch(patch.backstitchRemove, patch.backstitchAdd);
+    }
     set({ history: { undo: history.undo.slice(0, -1), redo: [...history.redo, patch] }, dirty: true });
   },
 
@@ -212,8 +255,12 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     const { history } = get();
     const patch = history.redo[history.redo.length - 1];
     if (!patch) return;
-    get().setCells(patch.cells);
-    get().setBackstitch(patch.backstitchAdd, patch.backstitchRemove);
+    if (patch.replace) {
+      get().replacePattern(patch.replace.after);
+    } else {
+      get().setCells(patch.cells);
+      get().setBackstitch(patch.backstitchAdd, patch.backstitchRemove);
+    }
     set({ history: { undo: [...history.undo, patch], redo: history.redo.slice(0, -1) }, dirty: true });
   },
 
@@ -221,9 +268,54 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   canRedo: () => get().history.redo.length > 0,
 
   setSelectedColour: (selectedColour) => set({ selectedColour }),
-  setTool: (tool) => set({ tool }),
+  setTool(tool) {
+    const current = get().tool;
+    if (tool !== current) set({ tool, previousTool: current });
+  },
   setSelection: (selection) => set({ selection }),
+  setOverlay: (overlay) => set({ overlay }),
   setPreviewStep: (previewStep) => set({ previewStep }),
+
+  async applyOp(op, params = {}) {
+    const before = get().pattern;
+    if (!before) return false;
+    try {
+      const after = await applyOpApi(before, op, params);
+      if (get().pattern !== before) {
+        useToast.getState().show('The pattern changed while the operation ran; try again.');
+        return false;
+      }
+      get().replacePattern(after);
+      get().pushPatch({ cells: [], backstitchAdd: [], backstitchRemove: [], replace: { before, after } });
+      return true;
+    } catch (e) {
+      useToast.getState().show(errorMessage(e));
+      return false;
+    }
+  },
+
+  async save() {
+    const { slug, pattern, saving } = get();
+    if (!slug || !pattern || saving) return false;
+    set({ saving: true });
+    try {
+      const saved = await savePattern(slug, pattern);
+      if (get().slug !== slug) return false;
+      if (get().pattern === pattern) {
+        // nothing changed meanwhile: adopt the canonical copy (else the newer local edits stay, still dirty)
+        const { selectedColour, tool, previousTool } = get();
+        get().setPattern(saved);
+        set({ selectedColour: Math.min(selectedColour, Math.max(0, saved.legend.length - 1)), tool, previousTool });
+      }
+      useToast.getState().show('Saved');
+      return true;
+    } catch (e) {
+      useToast.getState().show(errorMessage(e));
+      return false;
+    } finally {
+      set({ saving: false });
+    }
+  },
 
   async loadOps() {
     if (get().opSchemas.length > 0) return;

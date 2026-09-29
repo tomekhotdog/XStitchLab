@@ -80,8 +80,9 @@ input { padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; bac
 
 /* Palette */
 .legend-list { list-style: none; margin: 0; padding: 0; }
+.legend-item { display: flex; align-items: center; gap: 2px; }
 .legend-row {
-  display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; width: 100%;
+  display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; align-items: center; width: 100%; min-width: 0;
   padding: 4px; border: 1px solid transparent; background: none; text-align: left; border-radius: 6px;
 }
 .legend-row:hover { background: var(--bg); }
@@ -170,3 +171,37 @@ select { font: inherit; padding: 4px 8px; border: 1px solid var(--line); border-
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 90; padding: 8px 14px; border-radius: 8px;
   background: var(--ink); color: #fff; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); cursor: pointer; max-width: 80vw;
 }
+
+/* Task 11: tools, palette actions, save, shortcuts (Task 13 restyles) */
+kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; padding: 1px 4px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--bg); color: var(--muted); }
+.legend-key { justify-self: end; }
+.titlebar-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+.dirty-dot { display: inline-block; width: 8px; height: 8px; margin-left: 8px; border-radius: 50%; background: var(--accent); vertical-align: middle; }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.canvas-area { flex: 1; min-height: 0; display: flex; }
+.toolbar { display: flex; flex-direction: column; gap: 4px; padding: 8px 6px; border-right: 1px solid var(--line); background: var(--panel); }
+.tool { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 44px; padding: 6px 0; border-color: transparent; }
+.tool:hover { background: var(--bg); }
+.tool.active, .tool[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.tool.active kbd { background: transparent; color: #fff; border-color: rgba(255,255,255,0.4); }
+.tool-glyph { font-size: 16px; line-height: 1; }
+.pattern-canvas-wrap[data-tool="select"] .pattern-canvas { cursor: default; }
+.pattern-canvas-wrap[data-tool="eyedropper"] .pattern-canvas { cursor: copy; }
+.pattern-canvas-wrap[data-tool="fill"] .pattern-canvas { cursor: cell; }
+.palette-menu-root { position: relative; flex: none; }
+.palette-menu-button { padding: 2px 6px; border-color: transparent; color: var(--muted); }
+.palette-menu-button:hover, .palette-menu-button[aria-expanded="true"] { background: var(--bg); color: var(--ink); }
+.palette-menu {
+  position: absolute; z-index: 20; right: 0; top: 100%; margin-top: 4px; width: 260px; max-height: 320px; overflow: auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); padding: 6px;
+}
+.palette-menu p { margin: 4px 6px; }
+.palette-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; border: none; border-radius: 4px; padding: 4px 6px; background: none; }
+.palette-menu-item:hover:not(:disabled) { background: var(--bg); }
+.palette-menu-item .muted { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.palette-search { width: 100%; margin-bottom: 6px; }
+.small-swatch { width: 18px; height: 18px; flex: none; }
+.shortcuts { max-width: 440px; }
+.shortcuts-table { border-collapse: collapse; width: 100%; margin-bottom: 12px; font-size: 13px; }
+.shortcuts-table td { padding: 3px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.shortcuts-table td:first-child { white-space: nowrap; }

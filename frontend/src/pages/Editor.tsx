@@ -1,12 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { PatternCanvas, type PatternCanvasHandle } from '@/canvas/PatternCanvas';
 import type { View, ViewMode } from '@/canvas/LayeredRenderer';
 import { PalettePanel } from '@/components/PalettePanel';
 import { RecipePanel } from '@/components/RecipePanel';
+import { SaveButton } from '@/components/SaveButton';
+import { ShortcutsHelp } from '@/components/ShortcutsHelp';
 import { StepStrip } from '@/components/StepStrip';
 import { ThreadPanel } from '@/components/ThreadPanel';
 import { Toast } from '@/components/Toast';
+import { Toolbar } from '@/components/Toolbar';
+import { useShortcuts } from '@/hooks/useShortcuts';
 import { useEditorStore } from '@/store/editorStore';
 
 export function Editor() {
@@ -16,6 +20,11 @@ export function Editor() {
   const pattern = useEditorStore((s) => s.pattern);
   const status = useEditorStore((s) => s.status);
   const dirty = useEditorStore((s) => s.dirty);
+  const canvasRef = useRef<PatternCanvasHandle>(null);
+  const [help, setHelp] = useState(false);
+  const toggleHelp = useCallback(() => setHelp((h) => !h), []);
+  const closeHelp = useCallback(() => setHelp(false), []);
+  useShortcuts({ canvas: canvasRef, toggleHelp });
 
   useEffect(() => {
     void load(slug);
@@ -29,9 +38,13 @@ export function Editor() {
         <Link to="/">← Library</Link>
         <h1>
           {title}
-          {dirty && <span className="muted"> (unsaved)</span>}
+          {dirty && <span className="dirty-dot" title="Unsaved changes" aria-label="Unsaved changes" />}
         </h1>
         <span className="mono muted">{slug}</span>
+        <span className="titlebar-actions">
+          <button type="button" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts" onClick={toggleHelp}>?</button>
+          <SaveButton />
+        </span>
       </header>
       <aside className="panel panel-left">
         <RecipePanel />
@@ -45,20 +58,20 @@ export function Editor() {
             <p>Add an input image and run a recipe.</p>
           </div>
         )}
-        {status.kind === 'idle' && pattern && <CanvasArea />}
+        {status.kind === 'idle' && pattern && <CanvasArea canvasRef={canvasRef} />}
         {status.kind === 'idle' && pattern && <StepStrip />}
       </main>
       <aside className="panel panel-right">
         <PalettePanel />
         <ThreadPanel />
       </aside>
+      <ShortcutsHelp open={help} onClose={closeHelp} />
       <Toast />
     </div>
   );
 }
 
-function CanvasArea() {
-  const canvasRef = useRef<PatternCanvasHandle>(null);
+function CanvasArea({ canvasRef }: { canvasRef: RefObject<PatternCanvasHandle> }) {
   const [viewMode, setViewMode] = useState<ViewMode>('colour');
   const [zoom, setZoom] = useState(1);
   const onViewChange = (v: View) => setZoom(v.zoom);
@@ -72,9 +85,12 @@ function CanvasArea() {
         </div>
         <button onClick={() => canvasRef.current?.fit()} title="Zoom to fit (F)">Fit</button>
         <span className="mono muted zoom">{Math.round(zoom * 100)}%</span>
-        <span className="muted hint">wheel: zoom · space+drag: pan</span>
+        <span className="muted hint">wheel: zoom · space+drag: pan · ? keys</span>
       </div>
-      <PatternCanvas ref={canvasRef} viewMode={viewMode} onViewChange={onViewChange} />
+      <div className="canvas-area">
+        <Toolbar />
+        <PatternCanvas ref={canvasRef} viewMode={viewMode} onViewChange={onViewChange} />
+      </div>
     </>
   );
 }

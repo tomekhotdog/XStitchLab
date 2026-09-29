@@ -1,21 +1,11 @@
-/** Bottom-centre transient message. `useToast.getState().show(msg)` from anywhere; one message at a time. */
+/** Bottom-centre transient message; state lives in `@/store/toast` so the editor store can show one too. */
 
 import { useEffect } from 'react';
-import { create } from 'zustand';
+import { useToast } from '@/store/toast';
+
+export { useToast };
 
 export const TOAST_MS = 4000;
-
-interface ToastState {
-  message: string | null;
-  show(message: string): void;
-  clear(): void;
-}
-
-export const useToast = create<ToastState>()((set) => ({
-  message: null,
-  show: (message) => set({ message }),
-  clear: () => set({ message: null }),
-}));
 
 export function Toast() {
   const message = useToast((s) => s.message);

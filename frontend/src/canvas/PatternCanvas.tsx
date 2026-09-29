@@ -1,37 +1,27 @@
 /**
  * One <canvas> that fills its container and shows the store's Pattern through a LayeredRenderer.
- * Handles zoom (wheel, about the cursor), pan (space+drag or middle drag), F to fit, and forwards
- * pointer events to a pluggable `CanvasTool` (Task 11). Exposes coordinate helpers through a ref.
+ * Handles zoom (wheel, about the cursor) and pan (space+drag or middle drag); other keys live in
+ * `useShortcuts`. Left-button pointer events go to the active tool (`tools[store.tool]`) with the
+ * store snapshot as context; the selection and the tool overlay are painted on the overlay layer.
  */
 
 import {
   forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState,
 } from 'react';
 import { pngSrc } from '@/api/client';
-import type { Segment } from '@/api/types';
-import type { Cell } from '@/model/grid';
+import type { Pattern, Segment } from '@/api/types';
+import type { Cell, Rect } from '@/model/grid';
 import { normalise } from '@/model/segments';
-import { useEditorStore } from '@/store/editorStore';
-import { LayeredRenderer, type View, type ViewMode } from './LayeredRenderer';
+import { useEditorStore, type ToolOverlay } from '@/store/editorStore';
+import { FABRIC, LayeredRenderer, type View, type ViewMode } from './LayeredRenderer';
+import { tools } from './tools';
+import type { CanvasTool, ToolContext, ToolEvent } from './tools/types';
 
 export const CELL_PX = 16;
 export const MIN_ZOOM = 0.25;
 export const MAX_ZOOM = 8;
 const FIT_MARGIN = 24;
 const EDGE_SNAP = 0.3;
-
-export interface ToolEvent {
-  cell: Cell | null;
-  edge: Segment | null;
-  native: PointerEvent;
-}
-
-/** Editing tools implement this; the default is a no-op. */
-export interface CanvasTool {
-  onDown?(ev: ToolEvent): void;
-  onMove?(ev: ToolEvent): void;
-  onUp?(ev: ToolEvent): void;
-}
 
 export interface PatternCanvasHandle {
   toCell(clientX: number, clientY: number): Cell | null;
@@ -44,7 +34,6 @@ export interface PatternCanvasHandle {
 
 interface Props {
   viewMode: ViewMode;
-  tool?: CanvasTool;
   onViewChange?(view: View): void;
 }
 
@@ -53,8 +42,49 @@ const clampZoom = (z: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
 const isTyping = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
 
+/** Selection rect, marquee and move preview on the overlay layer (device px, `s` per cell). */
+export function paintOverlay(
+  ctx: CanvasRenderingContext2D, s: number, pattern: Pattern, selection: Rect | null, overlay: ToolOverlay | null,
+): void {
+  const move = overlay?.move;
+  if (move) {
+    const { rect, dx, dy } = move;
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = FABRIC;
+    ctx.fillRect(rect.x * s, rect.y * s, rect.w * s, rect.h * s);
+    for (let y = rect.y; y < rect.y + rect.h; y++) {
+      for (let x = rect.x; x < rect.x + rect.w; x++) {
+        const entry = pattern.legend[pattern.grid[y]?.[x] ?? -1];
+        if (!entry) continue;
+        const isBackground = pattern.grid[y][x] === pattern.background_index;
+        ctx.fillStyle = isBackground ? FABRIC : `rgb(${entry.rgb[0]},${entry.rgb[1]},${entry.rgb[2]})`;
+        ctx.fillRect((x + dx) * s, (y + dy) * s, s, s);
+      }
+    }
+    ctx.globalAlpha = 1;
+    dashedRect(ctx, s, { ...rect, x: rect.x + dx, y: rect.y + dy });
+  } else if (selection) {
+    dashedRect(ctx, s, selection);
+  }
+  if (overlay?.marquee) dashedRect(ctx, s, overlay.marquee);
+}
+
+function dashedRect(ctx: CanvasRenderingContext2D, s: number, r: Rect): void {
+  const w = Math.min(3, Math.max(1.5, s * 0.08));
+  const x = r.x * s + w / 2;
+  const y = r.y * s + w / 2;
+  ctx.lineWidth = w;
+  ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.strokeRect(x, y, r.w * s - w, r.h * s - w);
+  ctx.setLineDash([w * 3, w * 3]);
+  ctx.strokeStyle = '#1f1b16';
+  ctx.strokeRect(x, y, r.w * s - w, r.h * s - w);
+  ctx.setLineDash([]);
+}
+
 export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function PatternCanvas(
-  { viewMode, tool, onViewChange }, ref,
+  { viewMode, onViewChange }, ref,
 ) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -65,8 +95,6 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
   const drawQueued = useRef(false);
   const spaceRef = useRef(false);
   const dragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
-  const toolRef = useRef(tool);
-  toolRef.current = tool;
   const onViewChangeRef = useRef(onViewChange);
   onViewChangeRef.current = onViewChange;
   const [panning, setPanning] = useState(false);
@@ -74,6 +102,9 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
   const pattern = useEditorStore((s) => s.pattern);
   const previewStep = useEditorStore((s) => s.previewStep);
   const steps = useEditorStore((s) => s.steps);
+  const selection = useEditorStore((s) => s.selection);
+  const overlay = useEditorStore((s) => s.overlay);
+  const activeTool = useEditorStore((s) => s.tool);
 
   /** Coalesce draws within one task; the canvas is repainted synchronously after it. */
   const schedule = useCallback(() => {
@@ -181,6 +212,12 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
     schedule();
   }, [viewMode, renderer, schedule]);
 
+  // selection and tool feedback → overlay layer
+  useEffect(() => {
+    renderer.setOverlay(selection || overlay ? (ctx, s, p) => paintOverlay(ctx, s, p, selection, overlay) : null);
+    schedule();
+  }, [selection, overlay, renderer, schedule]);
+
   // step preview image
   useEffect(() => {
     const step = previewStep === null ? undefined : steps[previewStep];
@@ -232,16 +269,13 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
     return () => ro.disconnect();
   }, [fit, schedule]);
 
-  // keyboard: space (pan), F (fit)
+  // keyboard: space (pan) — needs the matching keyup, so it lives here rather than in useShortcuts
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (isTyping(e.target)) return;
       if (e.code === 'Space') {
         spaceRef.current = true;
         setPanning(true);
-        e.preventDefault();
-      } else if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        fit();
         e.preventDefault();
       }
     };
@@ -257,7 +291,7 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-  }, [fit]);
+  }, []);
 
   // wheel zoom needs a non-passive listener
   useEffect(() => {
@@ -276,8 +310,16 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
   const toolEvent = (e: React.PointerEvent): ToolEvent => ({
     cell: toCell(e.clientX, e.clientY),
     edge: toEdge(e.clientX, e.clientY),
+    world: toWorld(e.clientX, e.clientY),
     native: e.nativeEvent,
   });
+
+  /** Tools are inert during a step preview, except that a stroke in progress may still end. */
+  const dispatch = (phase: keyof CanvasTool, e: React.PointerEvent) => {
+    const s = useEditorStore.getState();
+    if (!s.pattern || (s.previewStep !== null && phase !== 'onUp')) return;
+    tools[s.tool][phase](toolEvent(e), s as ToolContext);
+  };
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (e.button === 1 || (e.button === 0 && spaceRef.current)) {
@@ -289,7 +331,7 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
     }
     if (e.button === 0) {
       e.currentTarget.setPointerCapture(e.pointerId);
-      toolRef.current?.onDown?.(toolEvent(e));
+      dispatch('onDown', e);
     }
   };
 
@@ -299,7 +341,7 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
       setView({ panX: drag.panX + (e.clientX - drag.x), panY: drag.panY + (e.clientY - drag.y) });
       return;
     }
-    toolRef.current?.onMove?.(toolEvent(e));
+    dispatch('onMove', e);
   };
 
   const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -307,14 +349,15 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
       dragRef.current = null;
       return;
     }
-    toolRef.current?.onUp?.(toolEvent(e));
+    dispatch('onUp', e);
   };
 
   return (
-    <div ref={wrapRef} className="pattern-canvas-wrap" data-panning={panning || undefined}>
+    <div ref={wrapRef} className="pattern-canvas-wrap" data-panning={panning || undefined} data-tool={activeTool}>
       <canvas
         ref={canvasRef}
         className="pattern-canvas"
+        data-testid="pattern-canvas"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

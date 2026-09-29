@@ -1,4 +1,5 @@
 import { useEditorStore } from '@/store/editorStore';
+import { PaletteMenu } from './PaletteMenu';
 
 const css = (rgb: [number, number, number]) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
 
@@ -15,13 +16,13 @@ export function PalettePanel() {
         {pattern.legend.map((entry, i) => {
           const isBackground = i === pattern.background_index;
           return (
-            <li key={i}>
+            <li key={i} className="legend-item">
               <button
                 type="button"
                 className="legend-row"
                 aria-pressed={i === selected}
                 onClick={() => select(i)}
-                title={`${entry.dmc_code} ${entry.dmc_name}`}
+                title={`${entry.dmc_code} ${entry.dmc_name}${i < 9 ? ` (${i + 1})` : ''}`}
               >
                 <span className="swatch" style={{ background: css(entry.rgb) }}>
                   <span className="swatch-symbol">{entry.symbol}</span>
@@ -33,7 +34,9 @@ export function PalettePanel() {
                 <span className="legend-count mono">
                   {isBackground ? <span className="badge">fabric</span> : entry.stitch_count}
                 </span>
+                {i < 9 && <kbd className="legend-key">{i + 1}</kbd>}
               </button>
+              <PaletteMenu index={i} entry={entry} />
             </li>
           );
         })}
