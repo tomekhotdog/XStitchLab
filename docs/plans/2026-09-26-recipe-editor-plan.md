@@ -648,8 +648,12 @@ Commit: `feat(frontend): brief panel, input upload, exports`.
 
 ---
 
-### Task 13: Visual design pass
-**Depends on:** Task 12. Use the `frontend-design:frontend-design` skill before writing CSS.
+### Task 13: Visual design pass ✅ DONE (de15524 + fix)
+**Depends on:** Task 12.
+
+> Outcome: 162 vitest tests pass; build clean. Bricolage Grotesque / Instrument Sans / JetBrains Mono, Aida-cream light theme and warm dark theme via tokens, resizable panels, theme switch, sticky Run footer, full op titles, schema defaults shown. Orchestrator fix: global `[hidden]` rule (tab panels were both visible). Verified by screenshot in dark mode. Follow-up: canvas symbol ink colour is still hardcoded (low contrast on dark fabric).
+
+**Depends on (original):** Task 12. Use the `frontend-design:frontend-design` skill before writing CSS.
 
 **Files:**
 - Create: `frontend/src/styles/tokens.css` (light default: Aida cream ground `#f6f1e7`, ink `#1f1b16`, terracotta accent `#c8624a` (DMC 3830), muted sage `#96a07e` (DMC 522) for secondary, borders in warm grey; dark palette under `@media (prefers-color-scheme: dark)` and `[data-theme=dark]`), `frontend/src/styles/base.css`, component styles co-located as CSS modules
