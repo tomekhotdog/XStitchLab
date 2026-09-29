@@ -667,8 +667,10 @@ Commit: `style(frontend): workshop theme, tokens, resizable panels`.
 
 ---
 
-### Task 14: Playwright smoke, scripts, docs, cleanup
+### Task 14: Playwright smoke, scripts, docs, cleanup ✅ DONE (8269f37, a7a7c55, f46f40e)
 **Depends on:** Task 13
+
+> Outcome: Playwright smoke (library → run → paint → save → persisted) passes in 10 s. The e2e run exposed a real race in ops registry discovery under the API thread pool; fixed in e0dbcf4 (lock + publish when complete). Final verification: 303 core+backend, 5 benchmark, 162 vitest, tsc clean, 1 e2e.
 
 **Files:**
 - Create: `frontend/e2e/smoke.spec.ts` (starts against a backend with `XSTITCH_DESIGNS_DIR` pointing to a temp copy of `designs/01-three-brothers-riga`: open library → open Riga → Run → paint one cell → Save → reload → the cell persists), `frontend/playwright.config.ts`, npm script `e2e`
@@ -682,6 +684,7 @@ Commit: `chore: e2e smoke, scripts, docs`.
 ---
 
 ## Review
-- [ ] Code review requested (tomek-superpowers:request-review) after Task 8 (backend complete) and after Task 14
+- [x] Code review after Task 8 (done, fixes in abc0189)
+- [ ] Final code review after Task 14
 - [ ] All feedback addressed
 - [ ] Final verification passed (tomek-superpowers:verify)
