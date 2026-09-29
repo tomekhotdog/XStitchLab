@@ -3,7 +3,10 @@ import { Link, useParams } from 'react-router-dom';
 import { PatternCanvas, type PatternCanvasHandle } from '@/canvas/PatternCanvas';
 import type { View, ViewMode } from '@/canvas/LayeredRenderer';
 import { PalettePanel } from '@/components/PalettePanel';
+import { RecipePanel } from '@/components/RecipePanel';
+import { StepStrip } from '@/components/StepStrip';
 import { ThreadPanel } from '@/components/ThreadPanel';
+import { Toast } from '@/components/Toast';
 import { useEditorStore } from '@/store/editorStore';
 
 export function Editor() {
@@ -31,8 +34,7 @@ export function Editor() {
         <span className="mono muted">{slug}</span>
       </header>
       <aside className="panel panel-left">
-        <h2>Recipe</h2>
-        <p className="muted">Recipe editing arrives in the next step.</p>
+        <RecipePanel />
       </aside>
       <main className="editor-centre">
         {status.kind === 'loading' && <p className="muted centre">Loading…</p>}
@@ -44,11 +46,13 @@ export function Editor() {
           </div>
         )}
         {status.kind === 'idle' && pattern && <CanvasArea />}
+        {status.kind === 'idle' && pattern && <StepStrip />}
       </main>
       <aside className="panel panel-right">
         <PalettePanel />
         <ThreadPanel />
       </aside>
+      <Toast />
     </div>
   );
 }
