@@ -1,0 +1,11 @@
+{
+  "name": "xstitchlabs-website",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "."
+  },
+  "routes": [
+    { "pattern": "xstitchlabs.com", "custom_domain": true },
+    { "pattern": "www.xstitchlabs.com", "custom_domain": true }
+  ]
+}

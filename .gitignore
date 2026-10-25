@@ -30,3 +30,6 @@ htmlcov/
 
 # Private
 docs/upwork/
+
+# Wrangler local cache
+.wrangler/

@@ -1,0 +1,5 @@
+wrangler.jsonc
+package.json
+.DS_Store
+node_modules
+.wrangler
